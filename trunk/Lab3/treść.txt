@@ -1,0 +1,22 @@
+﻿TM – ćwiczenie 3
+
+Korzystając z modułu mikrokontrolera MSP430 oraz innych modułów systemu SML-3 należy zrealizować system o następującej funkcjonalności:
+
+
+8.       licznik 8-bitowy – ładowanie, zliczanie w dół – kod BCD
+
+
+
+UWAGI:
+
+1.       Sterowanie: dwa przyciski – co najmniej jeden obsługiwany w przerwaniu; wyświetlanie: dwie cyfry (szesnastkowe lub dziesiętne) na wyświetlaczu 7-segmentowym.
+
+2.       Ładowanie: wartością z portu wejściowego; dla układów z zerowaniem wartość z portu wejściowego wyznacza koniec zakresu zliczania (maksimum lub minimum).
+
+3.       Program sterujący należy napisać w asemblerze MSP430.
+
+4.       Proszę zastanowić się nad dekompozycją kodu na część realizującą obsługę sprzętu i część aplikacyjną.
+
+ 
+
+-- JCh
