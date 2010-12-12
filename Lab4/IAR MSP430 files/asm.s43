@@ -50,7 +50,18 @@ init:   MOV     #SFE(CSTACK), SP        ; set up stack
 
 main:   NOP                             ; main program
         MOV.W   #WDTPW+WDTHOLD,&WDTCTL  ; Stop watchdog timer
-
+        
+dupa:        
+        INC R10
+        BIT.B  #003Ch,R10            ;sprawdza czy juz minelo 60s
+        JZ Minuty
+        ADD #40h,R10
+Minuty:
+       ; BIT.B #0F00h, R10
+        
+        
+        JMP dupa
+        
         ; b0 - g0 - przycisk ladowania
         ; b1 - g1 - przycisk zliczania w dol
         BIS.B #003h, P1IES              ; ustaw edge select na H->L dla b0, b1
@@ -78,7 +89,7 @@ main:   NOP                             ; main program
         BIS #0122h,TBCTL                ; wlacz przerwania
                                         ; ustaw zegar timera na ACLK
                                         ; wystartuj liczenie
-        
+        MOV #0000h,R10                  ; zerowanie zegara
         BR #init_interrupts             ; przeskocz procedury obslugi przerwan
         
         ; procedury obslugi przerwan
@@ -125,13 +136,15 @@ TBIFG_HND:                           ; Vector 14: TIMOV Flag
         RETI 
 CCIFG_2_HND:                        ; Vector 4: Module 2
                                     ; odswiezanie 
+                                    
+        ;TODO odswiezanie
         ADD #258h,TBCCR2            ; ustawienie nowego punktu do liczenia
         JMP timer_B_int              ; sprawdza czy nie ma innego przerwania do obsluzenia
 
 CCIFG_1_HND:                        ; Vector 2: Module 1
                                     ; liczenie czasu
 
-
+        ;TODO liczenie czasu
         ADD #7530h,TBCCR1            ; ustawienie nowego punktu do liczenia
         JMP timer_B_int              ; sprawdza czy nie ma innego przerwania do obsluzenia
 
@@ -169,7 +182,9 @@ app:
         ;       b2: nastapilo przerwanie timera A
         ;       b1: wcisnieto g1
         ;       b0: wcisnieto g0
-
+        ; R10 - zegar 4 bit na godzine 1-12
+        ;       6 bit na minuty 0-59
+        ;       6 bit na sekundy 0-59
         DINT
 
         ; zlikwiduj kombinacje g0 & g1
