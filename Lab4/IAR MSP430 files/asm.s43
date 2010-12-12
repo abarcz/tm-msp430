@@ -1,0 +1,381 @@
+#include "msp430.h"                     ; #define controlled include file
+
+        NAME    main                    ; module name
+
+        PUBLIC  main                    ; make the main label visible
+                                        ; outside this module
+        ORG     0FFFEh
+        DC16    init                    ; set reset vector to 'init' label
+        
+        ; ustawienie wszystkich wektorow przerwan oprocz
+        ; Reset na domyslna obsluge
+        ORG     0FFFCh
+        DC16    default_int
+        ORG     0FFFAh
+        DC16    default_int
+        ORG     0FFF6h
+        DC16    default_int
+        ORG     0FFF4h
+        DC16    default_int
+        ORG     0FFF2h
+        DC16    default_int
+        ORG     0FFF0h
+        DC16    default_int
+        ORG     0FFEEh
+        DC16    default_int
+        ORG     0FFECh
+        DC16    default_int
+        ORG     0FFE6h
+        DC16    default_int
+        ORG     0FFE4h
+        DC16    default_int
+        ORG     0FFE2h
+        DC16    default_int
+        ORG     0FFE0h
+        DC16    default_int
+        
+        ORG     0FFE8h
+        DC16    IO1_interrupt
+        
+        ORG     0FFEAh
+        DC16    timer_A_int
+        
+        ORG     0FFF8h
+        DC16    timer_B_int
+        
+        RSEG    CSTACK                  ; pre-declaration of segment
+        RSEG    CODE                    ; place program in 'CODE' segment
+
+init:   MOV     #SFE(CSTACK), SP        ; set up stack
+
+main:   NOP                             ; main program
+        MOV.W   #WDTPW+WDTHOLD,&WDTCTL  ; Stop watchdog timer
+
+        ; b0 - g0 - przycisk ladowania
+        ; b1 - g1 - przycisk zliczania w dol
+        BIS.B #003h, P1IES              ; ustaw edge select na H->L dla b0, b1
+        BIS.B #003h, P1IE               ; wlacz przerwanie dla b0, b1
+        
+        BIS.B #080h, P1DIR              ; ustaw b7 jako bit wyjsciowy
+                                        ; (dioda bledu)
+        BIS.B #080h, P1OUT              ; gasi diode bledu
+        
+        BIS.B #0FFh, P6DIR              ; ustaw P6 jako port wyjsciowy
+        
+        ; przygotuj licznik timer A
+        ; licznik A ma liczyc w trybie UP od 0 do wartosci TACCR0
+        ; przerwanie TACCR0 wykorzystywane jest przez obsluge
+        ; eliminacji drgan
+        BIS #0102h, TACTL               ; wlacz przerwania dla Timer A
+                                        ; ustaw zegar timera na ACLK
+        MOV #0005h, TACCR0              ; ustaw 5 jako wartosc do ktorej 
+                                        ; liczy timer
+        
+        MOV #258h ,TBCCR1                   ; wartosc do liczenia przy odswiezaniu
+                                        ; 2ms -> 600 -> 258 
+        MOV #7530h ,TBCCR2              ;wartosc do liczenia przy pomiarze czasu
+                                        ; 1 sekunda-> 30000 -> 7530h
+        BIS #0122h,TBCTL                ; wlacz przerwania
+                                        ; ustaw zegar timera na ACLK
+                                        ; wystartuj liczenie
+        
+        BR #init_interrupts             ; przeskocz procedury obslugi przerwan
+        
+        ; procedury obslugi przerwan
+IO1_interrupt:
+        BIT.B #001h, P1IFG              ; g0 ?
+        JZ IO1_checkg1
+        BIS #0001h, R15                 ; ustaw znacznik g0
+IO1_checkg1:
+        BIT.B #002h, P1IFG              ; g1 ?
+        JZ IO1_clear
+        BIS #0002h, R15                 ; ustaw znacznik g1
+IO1_clear:
+        BIC.B #0FFh, P1IFG              ; czysc znaczniki przerwan
+        PUSH R6
+        MOV 2(SP), R6
+        BIC #CPUOFF, R6                 ; zmodyfikuj lezace na stosie SR
+        MOV R6, 2(SP)                   ; aby obudzic procesor
+        POP R6
+        RETI
+        
+timer_A_int:
+        BIS #0004h, R15                 ; ustaw znacznik timer_A_TACCR0
+        BIC #0001h, TACTL
+        PUSH R6
+        MOV 2(SP), R6
+        BIC #CPUOFF, R6                 ; zmodyfikuj lezace na stosie SR
+        MOV R6, 2(SP)                   ; aby obudzic procesor
+        POP R6
+        RETI
+
+timer_B_int:
+
+        ADD &TBIV,PC                  ; Add offset to Jump table
+        JMP WAKE_CPU                   ; Vector 0: No interrupt 
+        JMP CCIFG_1_HND               ; Vector 2: Module 1 
+        JMP CCIFG_2_HND               ; Vector 4: Module 2 
+        RETI                          ; Vector 6: Module 3
+        RETI                          ; Vector 8: Module 4
+        RETI                          ; Vector 10: Module 5
+        RETI                          ; Vector 12: Module 6
+        
+TBIFG_HND:                           ; Vector 14: TIMOV Flag
+                                      ; Task starts here
+        RETI 
+CCIFG_2_HND:                        ; Vector 4: Module 2
+                                    ; odswiezanie 
+        ADD #258h,TBCCR2            ; ustawienie nowego punktu do liczenia
+        JMP timer_B_int              ; sprawdza czy nie ma innego przerwania do obsluzenia
+
+CCIFG_1_HND:                        ; Vector 2: Module 1
+                                    ; liczenie czasu
+
+
+        ADD #7530h,TBCCR1            ; ustawienie nowego punktu do liczenia
+        JMP timer_B_int              ; sprawdza czy nie ma innego przerwania do obsluzenia
+
+WAKE_CPU:
+        PUSH R6
+        MOV 2(SP), R6
+        BIC #CPUOFF, R6                 ; zmodyfikuj lezace na stosie SR
+        MOV R6, 2(SP)                   ; aby obudzic procesor
+        POP R6
+        RETI
+default_int:
+        BIC.B #080h, P1OUT              ; zapala diode bledu
+        RETI
+        
+init_interrupts:
+        ; ustawienie wszystkich wektorow przerwan oprocz
+        ; Reset na domyslna obsluge
+
+        
+        CLR R4
+        CLR R12
+        CLR R13
+        CLR R14
+        CLR R15
+        MOV.B R4, P6OUT                 ; wyswietl licznik poprzez P6 
+        
+app:    
+        ; R4  - licznik BCD na mniej znaczacym bajcie
+        ; R12 - zliczanie cykli eliminacji drgan, max 32 (20h)
+        ; R13 - zliczanie wartosci poszukiwanej w eliminacji drgan
+        ;       (ile razy pod rzad sie pojawila), max 4
+        ; R14 - stan ukladu (na najmniej znaczacych 3ech bitach)
+        ;       bit3 == 1 => jestesmy w obsludze g1
+        ; R15 - znaczniki uzywane przez przerwania i aplikacje
+        ;       b2: nastapilo przerwanie timera A
+        ;       b1: wcisnieto g1
+        ;       b0: wcisnieto g0
+
+        DINT
+
+        ; zlikwiduj kombinacje g0 & g1
+        BIT #0001h, R15                 ; g0 ?
+        JZ check000
+        
+        BIT #0002h, R15                 ; g0 & g1 ?
+        JZ check000
+        
+        ; wyjdz z obslugi g1
+        BIC #0002h, R15                 ; czysc g1, g0 jest wazniejsze
+        BIT #0004h, R14                 ; czy jestesmy w obsludze g1?
+        JZ check000
+        
+        CLR R13                         ; czysc liczniki eliminacji drgan
+        CLR R12
+        BIC.B #002h, P1IE               ; zablokuj przerwania g1
+        MOV #0001h, R14                 ; przejdz do stanu 001
+        BR #do001
+        
+        ;------------- automat stanowy -----------------
+        ; sprawdz w jakim stanie znajduje sie uklad
+check000:
+        CMP #0000h, R14                 ; stan 000
+        JNE check001
+        BIT #0001h, R15                 ; g0 ?
+        JZ ch000_g1
+        BIC.B #003h, P1IE               ; wylacz przerwania g0, g1
+        MOV #0001h, R14                 ; stan := 001 
+        BIS #0010h, TACTL               ; Timer A start UP to TACCR0
+        BR #sleep
+ch000_g1:
+        BIT #0002h, R15                 ; g1 ?
+        JZ sleep
+        BIC.B #002h, P1IE               ; wylacz przerwanie g1
+        MOV #0005h, R14                 ; stan := 101
+        BIS #0010h, TACTL               ; Timer A start UP to TACCR0
+        BR #sleep
+        
+        ;--------------- obsluga g0 -------------------
+check001:
+        CMP #0001h, R14                 ; stan 001
+        JNE check011
+do001:  BIT #0004h, R15                 ; przerwanie timer_A
+        JZ sleep
+        BIC #0004h, R15
+        INC R13                         ; licznik_zer++
+        INC R12                         ; licznik_cykli++
+        BIT.B #001h, P1IN               ; g0 != 0 ?
+        JZ noclr001
+        CLR R13                         
+noclr001:
+        CMP #0004h, R13                 
+        JNE timeout001
+        ; eliminacja drgan zakonczona
+        MOV.B P3IN, R4                  ; laduj licznik z P3
+
+        CLRC                            ; korekcja wczytanej wartosci do BCD
+        DADC R4
+               
+        MOV.B R4, P6OUT                 ; wyswietl licznik poprzez P6
+        MOV #0003h, R14                 ; stan := 011
+        CLR R13                         ; czysc liczniki eliminacji drgan
+        CLR R12
+        BR #sleep
+timeout001:
+        CMP #0020h, R12
+        JNE sleep
+        MOV #0000h, R14                 ; stan := 000
+        CLR R13                         ; czysc liczniki eliminacji drgan
+        CLR R12
+        BIC #0003h, R15                 ; czysc informacje o obsludze g0, g1
+        BIS.B #003h, P1IE               ; wlacz przerwania g0, g1
+        BIC #0010h, TACTL               ; Timer A stop UP to TACCR0
+        BR #sleep
+        
+check011:
+        CMP #0003h, R14                 ; stan 011
+        JNE check010
+        BIT #0004h, R15                 ; przerwanie timer_A
+        JZ sleep
+        BIT.B #001h, P1IN               ; g0 != 0 ?
+        JZ sleep
+        MOV #0002h, R14                 ; stan := 010
+        BR #sleep
+        
+check010: 
+        CMP #0002h, R14                 ; stan 010
+        JNE check101
+        BIT #0004h, R15                 ; przerwanie timer_A
+        JZ sleep
+        BIC #0004h, R15
+        INC R13                         ; licznik_zer++
+        INC R12                         ; licznik_cykli++
+        BIT.B #001h, P1IN               ; g0 != 0 ?
+        JNZ noclr010
+        CLR R13        
+noclr010:
+        CMP #0004h, R13                 
+        JNE timeout010
+        ; eliminacja drgan zakonczona
+        BIC #0010h, TACTL               ; Timer A stop UP to TACCR0
+        MOV #0000h, R14                 ; stan := 000
+        CLR R13                         ; czysc liczniki eliminacji drgan
+        CLR R12
+        BIC #0003h, R15                 ; czysc informacje o obsludze g0, g1
+        BIC.B #003h, P1IFG              ; czysc informacje o przerwaniach g0, g1
+        BIS.B #003h, P1IE               ; wlacz przerwania g0, g1
+        BR #sleep
+timeout010:
+        CMP #0020h, R12
+        JNE sleep
+        MOV #0003h, R14                 ; stan := 011
+        CLR R13                         ; czysc liczniki eliminacji drgan
+        CLR R12
+        BR #sleep
+        
+        ;--------------- obsluga g1 -------------------
+check101:        
+        CMP #0005h, R14                 ; stan 101
+        JNE check111
+        BIT #0004h, R15                 ; przerwanie timer_A
+        JZ sleep
+        BIC #0004h, R15
+        INC R13                         ; licznik_zer++
+        INC R12                         ; licznik_cykli++
+        BIT.B #002h, P1IN               ; g1 != 0 ?
+        JZ noclr101
+        CLR R13        
+noclr101:
+        CMP #0004h, R13                 
+        JNE timeout101
+        
+        DEC R4                          ; zmniejsz licznik o 1
+        MOV R4,R6 
+        AND #000Fh, R6 
+        CMP  #000Fh, R6 
+        JNE checkhigh101
+        BIC.B #006h, R4                 ; popraw dolny bajt do BCD jesli trzeba
+checkhigh101:
+        MOV R4, R6
+        AND #00F0h, R6
+        CMP #00F0h, R6
+        JNE checkend101
+        BIC #0060h, R4                  ; popraw gorny bajt do BCD jesli trzeba
+checkend101:
+        MOV.B R4, P6OUT                 ; wyswietl licznik poprzez P6
+
+        MOV #0007h, R14                 ; stan := 111
+        CLR R13                         ; czysc liczniki eliminacji drgan
+        CLR R12
+        BR #sleep
+timeout101:
+        CMP #0020h, R12
+        JNE sleep
+        MOV #0000h, R14                 ; stan := 000
+        CLR R13                         ; czysc liczniki eliminacji drgan
+        CLR R12
+        BIC #0002h, R15                 ; czysc informacje o obsludze g1
+        BIS.B #003h, P1IE               ; wlacz przerwania g0, g1
+        BIC #0010h, TACTL               ; Timer A stop UP to TACCR0
+        BR #sleep
+
+check111:
+        CMP #0007h, R14                 ; stan 111
+        JNE check110
+        BIT #0004h, R15                 ; przerwanie timer_A
+        JZ sleep
+        BIT.B #002h, P1IN               ; g1 != 0 ?
+        JZ sleep
+        MOV #0006h, R14                 ; stan := 110
+        BR #sleep
+
+check110: 
+        ;CMP #0006h, R14                ; stan 110, nie musimy sprawdzac
+        BIT #0004h, R15                 ; przerwanie timer_A
+        JZ sleep
+        BIC #0004h, R15
+        INC R13                         ; licznik_zer++
+        INC R12                         ; licznik_cykli++
+        BIT.B #002h, P1IN               ; g1 != 0 ?
+        JNZ noclr110
+        CLR R13        
+noclr110:
+        CMP #0004h, R13                 
+        JNE timeout110
+        ; eliminacja drgan zakonczona
+        BIC #0010h, TACTL               ; Timer A stop UP to TACCR0
+        MOV #0000h, R14                 ; stan := 000
+        CLR R13                         ; czysc liczniki eliminacji drgan
+        CLR R12
+        BIC #0002h, R15                 ; czysc informacje o obsludze g1
+        BIC.B #002h, P1IFG              ; czysc informacje o przerwaniu g1
+        BIS.B #002h, P1IE               ; wlacz przerwanie g1
+        BR #sleep
+timeout110:
+        CMP #0020h, R12
+        JNE sleep
+        MOV #0007h, R14                 ; stan := 111
+        CLR R13                         ; czysc liczniki eliminacji drgan
+        CLR R12
+        BR #sleep
+       
+sleep:
+        BIS #GIE+CPUOFF, SR             ; przejscie do LPM1
+        BR #app                         ; skok na poczatek czesci aplikacyjnej
+
+        END
+              
