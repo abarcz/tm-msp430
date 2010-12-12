@@ -6,21 +6,21 @@
   <configuration>
     <name>Debug</name>
     <outputs>
+      <file>$TOOLKIT_DIR$\inc\msp430f1611.h</file>
       <file>$PROJ_DIR$\Debug\Exe\l3.d43</file>
-      <file>$PROJ_DIR$\Debug\Obj\asm.r43</file>
-      <file>$TOOLKIT_DIR$\config\lnk430F1611.xcl</file>
       <file>$TOOLKIT_DIR$\config\multiplier.xcl</file>
       <file>$PROJ_DIR$\asm.s43</file>
-      <file>$TOOLKIT_DIR$\inc\msp430.h</file>
+      <file>$TOOLKIT_DIR$\config\lnk430F1611.xcl</file>
       <file>$PROJ_DIR$\Debug\List\asm.lst</file>
-      <file>$TOOLKIT_DIR$\inc\msp430f1611.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\asm.r43</file>
+      <file>$TOOLKIT_DIR$\inc\msp430.h</file>
     </outputs>
     <file>
       <name>$PROJ_DIR$\Debug\Exe\l3.d43</name>
       <inputs>
         <tool>
           <name>XLINK</name>
-          <file> 2 3 1</file>
+          <file> 4 2 6</file>
         </tool>
       </inputs>
     </file>
@@ -29,13 +29,13 @@
       <outputs>
         <tool>
           <name>A430</name>
-          <file> 1 6</file>
+          <file> 6 5</file>
         </tool>
       </outputs>
       <inputs>
         <tool>
           <name>A430</name>
-          <file> 5 7</file>
+          <file> 7 0</file>
         </tool>
       </inputs>
     </file>
@@ -44,24 +44,20 @@
       <outputs>
         <tool>
           <name>XLINK</name>
-          <file> 0</file>
+          <file> 1</file>
         </tool>
       </outputs>
     </file>
-    <forcedrebuild>
-      <name>$PROJ_DIR$\asm.s43</name>
-      <tool>A430</tool>
-    </forcedrebuild>
   </configuration>
   <configuration>
     <name>Release</name>
     <outputs>
-      <file>$TOOLKIT_DIR$\config\lnk430F1611.xcl</file>
-      <file>$TOOLKIT_DIR$\inc\msp430x16x.h</file>
       <file>$TOOLKIT_DIR$\config\multiplier.xcl</file>
       <file>$PROJ_DIR$\asm.s43</file>
+      <file>$TOOLKIT_DIR$\config\lnk430F1611.xcl</file>
       <file>$TOOLKIT_DIR$\inc\msp430.h</file>
       <file>$PROJ_DIR$\Release\Exe\l3.txt</file>
+      <file>$TOOLKIT_DIR$\inc\msp430x16x.h</file>
       <file>$PROJ_DIR$\Release\Obj\asm.r43</file>
     </outputs>
     <file>
@@ -75,7 +71,7 @@
       <inputs>
         <tool>
           <name>A430</name>
-          <file> 4 1</file>
+          <file> 3 5</file>
         </tool>
       </inputs>
     </file>
@@ -84,7 +80,7 @@
       <inputs>
         <tool>
           <name>XLINK</name>
-          <file> 0 2 6</file>
+          <file> 2 0 6</file>
         </tool>
       </inputs>
     </file>
@@ -93,7 +89,7 @@
       <outputs>
         <tool>
           <name>XLINK</name>
-          <file> 5</file>
+          <file> 4</file>
         </tool>
       </outputs>
     </file>
