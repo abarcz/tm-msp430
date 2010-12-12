@@ -50,17 +50,7 @@ init:   MOV     #SFE(CSTACK), SP        ; set up stack
 
 main:   NOP                             ; main program
         MOV.W   #WDTPW+WDTHOLD,&WDTCTL  ; Stop watchdog timer
-        
-dupa:        
-        INC R10
-        BIT.B  #003Ch,R10            ;sprawdza czy juz minelo 60s
-        JZ Minuty
-        ADD #40h,R10
-Minuty:
-       ; BIT.B #0F00h, R10
-        
-        
-        JMP dupa
+          
         
         ; b0 - g0 - przycisk ladowania
         ; b1 - g1 - przycisk zliczania w dol
@@ -89,7 +79,8 @@ Minuty:
         BIS #0122h,TBCTL                ; wlacz przerwania
                                         ; ustaw zegar timera na ACLK
                                         ; wystartuj liczenie
-        MOV #0000h,R10                  ; zerowanie zegara
+        MOV #0000h,R10                  ; zerowanie sekund i minut
+        MOV #0000h,R9                   ; zerowanie godzin
         BR #init_interrupts             ; przeskocz procedury obslugi przerwan
         
         ; procedury obslugi przerwan
@@ -123,7 +114,7 @@ timer_A_int:
 timer_B_int:
 
         ADD &TBIV,PC                  ; Add offset to Jump table
-        JMP WAKE_CPU                   ; Vector 0: No interrupt 
+        RETI                   ; Vector 0: No interrupt 
         JMP CCIFG_1_HND               ; Vector 2: Module 1 
         JMP CCIFG_2_HND               ; Vector 4: Module 2 
         RETI                          ; Vector 6: Module 3
@@ -144,16 +135,29 @@ CCIFG_2_HND:                        ; Vector 4: Module 2
 CCIFG_1_HND:                        ; Vector 2: Module 1
                                     ; liczenie czasu
 
-        ;TODO liczenie czasu
+        INC R10
+        DADC R10
+        MOV #0ffh,R8
+        AND R10,R8
+        CMP #0060h,R8               ;sprawdza czy juz minelo 60s
+        JNE Minuty
+        BIC #000ffh,R10
+        ADD #0100h,R10
+        DADC R10
+Minuty:
+        MOV #0FF00h,R8
+        AND R10,R8
+        CMP #6000h, R8            ; sprawdza czy juz minelo 60 minut
+        RETI
+        BIC #0ff00h,R10
+        INC R9
+        DADC r9
+        CMP #024h,R9
+        RETI
+        MOV #00h,R9                 ;przekrec licznik od poczatku
         ADD #7530h,TBCCR1            ; ustawienie nowego punktu do liczenia
         JMP timer_B_int              ; sprawdza czy nie ma innego przerwania do obsluzenia
 
-WAKE_CPU:
-        PUSH R6
-        MOV 2(SP), R6
-        BIC #CPUOFF, R6                 ; zmodyfikuj lezace na stosie SR
-        MOV R6, 2(SP)                   ; aby obudzic procesor
-        POP R6
         RETI
 default_int:
         BIC.B #080h, P1OUT              ; zapala diode bledu
