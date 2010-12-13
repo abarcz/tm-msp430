@@ -23,7 +23,7 @@
         DC16    default_int
         ORG     0FFEEh
         DC16    default_int
-        ORG     0FFECh
+        ORG     0FFEAh
         DC16    default_int
         ORG     0FFE6h
         DC16    default_int
@@ -37,7 +37,7 @@
         ORG     0FFE8h
         DC16    IO1_interrupt
         
-        ORG     0FFEAh
+        ORG     0FFECh
         DC16    timer_A_int
         
         ORG     0FFF8h
@@ -67,21 +67,22 @@ main:   NOP                   ; main program
         ; licznik A ma liczyc w trybie UP od 0 do wartosci TACCR0
         ; przerwanie TACCR0 wykorzystywane jest przez obsluge
         ; eliminacji drgan
-        BIS #0102h, TACTL     ; wlacz przerwania dla Timer A
-                              ; ustaw zegar timera na ACLK
+        BIS #0100h, TACTL     ; ustaw zegar timera na ACLK
         MOV #0005h, TACCR0    ; ustaw 5 jako wartosc do ktorej 
                               ; liczy timer
+        BIS #0010h, TACCTL0   ; wlacz przerwania CCIFG0
         
+        ; przygotuj licznik timer B w trybie continous
         MOV #258h ,TBCCR1     ; wartosc do liczenia przy odswiezaniu
                               ; 2ms -> 600 -> 258 
-        MOV #7530h ,TBCCR2    ;wartosc do liczenia przy pomiarze czasu
+        MOV #7530h ,TBCCR2    ; wartosc do liczenia przy pomiarze czasu
                               ; 1 sekunda-> 30000 -> 7530h
+        CLR R9                ; zerowanie sekund i minut
+        CLR R8                ; zerowanie godzin
         BIS #0122h,TBCTL      ; wlacz przerwania
                               ; ustaw zegar timera na ACLK
                               ; wystartuj liczenie
-        MOV #0000h,R10        ; zerowanie sekund i minut
-        MOV #0000h,R9         ; zerowanie godzin
-        BR #init_interrupts   ; przeskocz procedury obslugi przerwan
+        BR #init_registers    ; przeskocz procedury obslugi przerwan
         
         ; procedury obslugi przerwan
 IO1_interrupt:
@@ -103,7 +104,7 @@ IO1_clear:
         
 timer_A_int:
         BIS #0004h, R15       ; ustaw znacznik timer_A_TACCR0
-        BIC #0001h, TACTL
+        ;BIC #0001h, TACTL
         PUSH R6
         MOV 2(SP), R6
         BIC #CPUOFF, R6       ; zmodyfikuj lezace na stosie SR
@@ -163,9 +164,7 @@ default_int:
         BIC.B #080h, P1OUT    ; zapala diode bledu
         RETI
         
-init_interrupts:
-        ; ustawienie wszystkich wektorow przerwan oprocz
-        ; Reset na domyslna obsluge
+init_registers:
 
         CLR R5
         CLR R6
@@ -328,10 +327,13 @@ nommchange101:
         MOV #23, R14        ; R14 = [00hh]
 nohhchange101:
 
-        ; TODO : zablokowanie zegara timerB
+        BIC #0011h, TBCCTL2 ; wylacz przerwania zliczania zegara
+        BIC #0030h, TBCTL   ; zastopuj timerB
+        CLR TBR             ; czysc timerB
         MOV R14, R8         ; ustaw hh
         MOV R4, R9          ; ustaw mmss
-        ; TODO : odblokowanie zegara timerB
+        BIS #0020h, TBCTL   ; wlacz timerB
+        BIS #0010h, TBCCTL2 ; wlacz przerwania zliczania zegara
 
         MOV #0007h, R6      ; stan := 111
         CLR R13             ; czysc liczniki eliminacji drgan
@@ -362,7 +364,6 @@ check110:
         ;CMP #0006h, R6     ; stan 110, nie musimy sprawdzac
         BIT #0004h, R15     ; przerwanie timer_A
         JZ sleep
-        
         INC R13             ; licznik_zer++
         INC R12             ; licznik_cykli++
         BIT.B #002h, P1IN   ; g1 != 0 ?
