@@ -1,0 +1,50 @@
+﻿================= SML spis treści =================
+
+0
+010_PS1 – Zasilacz
+020_TWI
+030_IN2x8 dwa przełączniki
+040_7SEG2S podwójny wyświetlacz 7seg
+050_ATmega8
+06x_EIA232_4
+080_MC68HC908Qx
+
+1
+100_LED8
+11x_LED8B dwukierunkowe diody
+120_IN8 8 guzików
+13x_IN6 6 przełączników
+140_CROSS1
+150_CROSS2 - Krosownica dwóch portów
+160_7SEG2
+170_7SEG9
+18x_LCDA
+190_HB272
+
+2
+202_NAND – Moduł bramek NAND
+212_7400 – Moduł układu 7400
+223_7474 – Moduł układu 7474
+230_DB25 – Moduł złącza szufladowego 25F
+235_DB25 – moduł złącza DB25 do współpracy z drukarką z
+interfejsem Centronics/IEEE1284
+240_RS232 – Moduł złącza RS232
+25x_BNC
+
+3
+340_163 – Moduł liczników binarnych
+360_7493x2 – Moduł liczników 7493
+370_NAND2x8 – Moduł dwuwejściowych bramek NAND
+380_NOTx6 – Moduł bramek NOT
+391_74138 – Moduł dekodera 74138
+
+4
+400_74194x2– Moduł rejestrów przesuwnych
+411_WYS-DYN – Moduł wyświetlacza dynamicznego
+430_ADC-AD7821 – Moduł przetwornika ADC – AD7821
+440_DAC_AD558 – Moduł przetwornika cyfrowo-analogowego
+451_IN_4xHEX– Moduł przełączników szesnastkowych
+
+
+
+

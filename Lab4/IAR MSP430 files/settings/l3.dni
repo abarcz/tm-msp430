@@ -1,5 +1,5 @@
 [DebugChecksum]
-Checksum=-665060233
+Checksum=-73742011
 [DisAssemblyWindow]
 NumStates=_ 1
 State 1=_ 1
@@ -49,6 +49,10 @@ ShowSource=1
 [TermIOLog]
 LoggingEnabled=_ 0
 LogFile=_ ""
+[Log file]
+LoggingEnabled=_ 0
+LogFile=_ ""
+Category=_ 0
 [Breakpoints]
 Count=0
 [FET]
@@ -71,10 +75,6 @@ SP=0
 SR=0
 all registers=0
 File name=
-[Log file]
-LoggingEnabled=_ 0
-LogFile=_ ""
-Category=_ 0
 [Aliases]
 A0=_ "E:\various\_PW\TM\Lab3\IAR MSP430 files\asm.s43" "F:\zetki\SEM 6\TM\lab3\IAR MSP430 files\asm.s43"
 Count=1
