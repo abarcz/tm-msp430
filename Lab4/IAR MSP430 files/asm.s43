@@ -77,11 +77,8 @@ main:   NOP                   ; main program
                               ; 2ms -> 600 -> 258 
         MOV #7530h ,TBCCR2    ; wartosc do liczenia przy pomiarze czasu
                               ; 1 sekunda-> 30000 -> 7530h
-        CLR R9                ; zerowanie sekund i minut
-        CLR R8                ; zerowanie godzin
-        BIS #0122h,TBCTL      ; wlacz przerwania
-                              ; ustaw zegar timera na ACLK
-                              ; wystartuj liczenie
+ 
+
         BR #init_registers    ; przeskocz procedury obslugi przerwan
         
         ; procedury obslugi przerwan
@@ -131,7 +128,8 @@ CCIFG_2_HND:                  ; Vector 4: Module 2
                                     
         ;TODO odswiezanie
         ADD #258h,TBCCR2      ; ustawienie nowego punktu do liczenia
-        JMP timer_B_int       ; sprawdza czy nie ma innego przerwania do obsluzenia
+        JMP timer_B_int       ; sprawdza czy nie ma innego przerwania do 
+                              ; obsluzenia
 
 CCIFG_1_HND:                  ; Vector 2: Module 1
         PUSH R7               ; liczenie czasu
@@ -168,12 +166,20 @@ init_registers:
 
         CLR R5
         CLR R6
+        CLR R8                ; zerowanie godzin
+        CLR R9                ; zerowanie sekund i minut
         CLR R10
         CLR R11
         CLR R12
         CLR R13
-        CLR R15 
-        
+        CLR R15
+        BIS #0010h, TBCCTL1   ; wlacz przerwania 
+        BIS #0010h, TBCCTL2   ; wlacz przerwania 
+        BIS #0122h, TBCTL     ; wlacz przerwania
+                              ; ustaw zegar timera na ACLK
+                              ; wystartuj liczenie
+                              
+                              
 app:        
         ; R4  - rejestr obliczen tymczasowych
         ; R5  - stan ukladu w kontekscie obslugi g0
