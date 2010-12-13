@@ -133,31 +133,31 @@ CCIFG_2_HND:                        ; Vector 4: Module 2
         JMP timer_B_int              ; sprawdza czy nie ma innego przerwania do obsluzenia
 
 CCIFG_1_HND:                        ; Vector 2: Module 1
-                                    ; liczenie czasu
-
-        INC R10
-        DADC R10
-        MOV #0ffh,R8
-        AND R10,R8
-        CMP #0060h,R8               ;sprawdza czy juz minelo 60s
-        JNE Minuty
-        BIC #000ffh,R10
-        ADD #0100h,R10
-        DADC R10
-Minuty:
-        MOV #0FF00h,R8
-        AND R10,R8
-        CMP #6000h, R8            ; sprawdza czy juz minelo 60 minut
-        RETI
-        BIC #0ff00h,R10
+        PUSH R7                            ; liczenie czasu
         INC R9
-        DADC r9
-        CMP #024h,R9
-        RETI
-        MOV #00h,R9                 ;przekrec licznik od poczatku
+        DADC R9
+        MOV #0ffh,R7
+        AND R9,R7
+        CMP #0060h,R7               ;sprawdza czy juz minelo 60s
+        JNE Minuty
+        BIC #000ffh,R9
+        ADD #0100h,R9
+        DADC R9
+Minuty:
+        MOV #0FF00h,R7
+        AND R9,R7
+        CMP #6000h, R7            ; sprawdza czy juz minelo 60 minut
+        JNE RETURN
+        BIC #0ff00h,R9
+        INC R8
+        DADC R8
+        CMP #024h,R8
+        JNE RETURN
+        MOV #00h,R8                 ;przekrec licznik od poczatku
         ADD #7530h,TBCCR1            ; ustawienie nowego punktu do liczenia
+        POP R7
         JMP timer_B_int              ; sprawdza czy nie ma innego przerwania do obsluzenia
-
+RETURN: POP R7
         RETI
 default_int:
         BIC.B #080h, P1OUT              ; zapala diode bledu
@@ -186,9 +186,8 @@ app:
         ;       b2: nastapilo przerwanie timera A
         ;       b1: wcisnieto g1
         ;       b0: wcisnieto g0
-        ; R10 - zegar 4 bit na godzine 1-12
-        ;       6 bit na minuty 0-59
-        ;       6 bit na sekundy 0-59
+        ; R9 - zegar 8 bit na godzine 1-23
+        ; R8 - zegar 8 bit na sekundy + 8bit na minuty
         DINT
 
         ; zlikwiduj kombinacje g0 & g1
