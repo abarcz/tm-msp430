@@ -123,8 +123,13 @@
      73    000034                                                      ; liczy
                                 timer
      74    000034                      
-     75    000034 B0405802....         MOV #258h ,TBCCR1                   ;
-  wartosc do liczenia przy odswiezaniu
+     75    000034 B0405802....         MOV #258h ,TBCCR1               ;
+                                                                        wartosc
+                                                                        do
+                                                                        liczeni
+                                                                       a przy
+                                                                        odswiez
+                                                                       aniu
      76    00003A                                                      ; 2ms ->
                                 600 -> 258 
      77    00003A B0403075....         MOV #7530h ,TBCCR2              ;wartosc
@@ -328,507 +333,335 @@
                                 przerwan oprocz
     168    0000F6                      ; Reset na domyslna obsluge
     169    0000F6              
-    170    0000F6                      
-    171    0000F6 0443                 CLR R4
-    172    0000F8 0C43                 CLR R12
-    173    0000FA 0D43                 CLR R13
-    174    0000FC 0E43                 CLR R14
-    175    0000FE 0F43                 CLR R15
-    176    000100 C044....             MOV.B R4, P6OUT                 ;
-                                                  wyswietl licznik poprzez P6
-                                                  
-    177    000104                      
-    178    000104              app:    
-    179    000104                      ; R4  - licznik BCD na mniej znaczacym
-                                bajcie
-    180    000104                      ; R12 - zliczanie cykli eliminacji
-                                drgan, max 32 (20h)
-    181    000104                      ; R13 - zliczanie wartosci poszukiwanej
-                                w eliminacji drgan
-    182    000104                      ;       (ile razy pod rzad sie
-                                pojawila), max 4
-    183    000104                      ; R14 - stan ukladu (na najmniej
-                                znaczacych 3ech bitach)
-    184    000104                      ;       bit3 == 1 => jestesmy w obsludze
+    170    0000F6 0543                 CLR R5
+    171    0000F8 0643                 CLR R6
+    172    0000FA 0A43                 CLR R10
+    173    0000FC 0B43                 CLR R11
+    174    0000FE 0C43                 CLR R12
+    175    000100 0D43                 CLR R13
+    176    000102 0E43                 CLR R14
+    177    000104 0F43                 CLR R15 
+    178    000106                      
+    179    000106              app:        
+    180    000106                      ; R4  - rejestr obliczen tymczasowych
+    181    000106                      ; R5  - stan ukladu w kontekscie obslugi
+                                g0
+    182    000106                      ;       (na najmniej znaczacych 2och
+                                bitach)
+    183    000106                      ; R6  - stan ukladu w kontekscie obslugi
                                 g1
-    185    000104                      ; R15 - znaczniki uzywane przez
-                                przerwania i aplikacje
-    186    000104                      ;       b2: nastapilo przerwanie timera
-                                A
-    187    000104                      ;       b1: wcisnieto g1
-    188    000104                      ;       b0: wcisnieto g0
-    189    000104                      ; R9 - zegar 8 bit na godzine 1-23
-    190    000104                      ; R8 - zegar 8 bit na sekundy + 8bit na
+    184    000106                      ;       (na najmniej znaczacych 2och
+                                bitach)
+    185    000106                      ; R8  - zegar 8 bit na godzine
+                                1-23
+    186    000106                      ; R9  - zegar 8 bit na sekundy + 8bit na
                                 minuty
-    191    000104 32C2                 DINT
-    192    000106              
-    193    000106                      ; zlikwiduj kombinacje g0 & g1
-    194    000106 1FB3                 BIT #0001h, R15                 ; g0
-                                                                        ?
-    195    000108 0C24                 JZ check000
-    196    00010A                      
-    197    00010A 2FB3                 BIT #0002h, R15                 ; g0 &
-                                                                        g1
-                                                                        ?
-    198    00010C 0A24                 JZ check000
-    199    00010E                      
-    200    00010E                      ; wyjdz z obslugi g1
-    201    00010E 2FC3                 BIC #0002h, R15                 ; czysc
-                                                                        g1, g0
-                                                                        jest
-                                                                        wazniej
-                                                                       sze
-    202    000110 2EB2                 BIT #0004h, R14                 ; czy
-                                                                        jestesm
-                                                                       y w
-                                                                        obsludz
-                                                                       e
-                                                                        g1?
-    203    000112 0724                 JZ check000
-    204    000114                      
-    205    000114 0D43                 CLR R13                         ; czysc
-                                                                        licznik
-                                                                       i
-                                                                        elimina
-                                                                       cji
-                                                                        drgan
-    206    000116 0C43                 CLR R12
-    207    000118 E0C3....             BIC.B #002h, P1IE               ;
-                                                                        zabloku
-                                                                       j
-                                                                        przerwa
-                                                                       nia
-                                                                        g1
-    208    00011C 1E43                 MOV #0001h, R14                 ;
-                                                                        przejdz
-                                                                        do
-                                                                        stanu
-                                                                        001
-    209    00011E 3040....             BR #do001
-    210    000122                      
-    211    000122                      ;------------- automat stanowy
-                                -----------------
-    212    000122                      ; sprawdz w jakim stanie znajduje sie
+    187    000106                      ; R10 - g0::zliczanie cykli eliminacji
+                                drgan, max 32 (20h)
+    188    000106                      ; R11 - g0::zliczanie wartosci
+                                poszukiwanej w eliminacji drgan
+    189    000106                      ;       (ile razy pod rzad sie
+                                pojawila), max 4
+    190    000106                      ; R12 - g1::zliczanie cykli eliminacji
+                                drgan, j.w.
+    191    000106                      ; R13 - g1::zliczanie wartosci
+                                poszukiwanej w eliminacji drgan
+    192    000106                      ;       j.w.
+    193    000106                      ; R14 - rejestr obliczen tymczasowych
+                                
+    194    000106                      ;     
+    195    000106                      ; R15 - znaczniki uzywane przez
+                                przerwania i aplikacje
+    196    000106                      ;       b3: 1 => wyswietlanie mm:ss
+    197    000106                      ;           0 => wyswietlanie hh:mm
+    198    000106                      ;       b2: nastapilo przerwanie timera
+                                A
+    199    000106                      ;       b1: wcisnieto g1
+    200    000106                      ;       b0: wcisnieto g0
+    201    000106                      
+    202    000106               
+    203    000106                      
+    204    000106                      
+    205    000106                      ;----------- automat stanowy g0
+                                -----------
+    206    000106                      ; sprawdz w jakim stanie znajduje sie
                                 uklad
-    213    000122              check000:
-    214    000122 0E93                 CMP #0000h, R14                 ; stan
-                                                                        000
-    215    000124 1620                 JNE check001
-    216    000126 1FB3                 BIT #0001h, R15                 ; g0
-                                                                        ?
-    217    000128 0924                 JZ ch000_g1
-    218    00012A F0C00300....         BIC.B #003h, P1IE               ; wylacz
-                                                                        przerwa
-                                                                       nia g0,
-                                                                        g1
-    219    000130 1E43                 MOV #0001h, R14                 ; stan
-                                                                        := 001
-                                                                        
-    220    000132 B0D01000....         BIS #0010h, TACTL               ; Timer
-                                                                        A start
-                                                                        UP to
-                                                                        TACCR0
-    221    000138 3040....             BR #sleep
-    222    00013C              ch000_g1:
-    223    00013C 2FB3                 BIT #0002h, R15                 ; g1
-                                                                        ?
-    224    00013E C624                 JZ sleep
-    225    000140 E0C3....             BIC.B #002h, P1IE               ; wylacz
-                                                                        przerwa
-                                                                       nie
-                                                                        g1
-    226    000144 3E400500             MOV #0005h, R14                 ; stan
-                                                                        :=
-                                                                        101
-    227    000148 B0D01000....         BIS #0010h, TACTL               ; Timer
-                                                                        A start
-                                                                        UP to
-                                                                        TACCR0
-    228    00014E 3040....             BR #sleep
-    229    000152                      
-    230    000152                      ;--------------- obsluga g0 ------------
+    207    000106              check000:
+    208    000106 0593                 CMP #0000h, R5      ; stan 000
+    209    000108 0A20                 JNE check001
+    210    00010A 1FB3                 BIT #0001h, R15     ; g0 ?
+    211    00010C 5324                 JZ autom_g1
+    212    00010E D0C3....             BIC.B #001h, P1IE   ; wylacz przerwanie
+                                                            g0
+    213    000112 1543                 MOV #0001h, R5      ; stan := 001
+                                                            
+    214    000114 B0D01000....         BIS #0010h, TACTL   ; Timer A start UP
+                                                            to TACCR0
+    215    00011A 3040....             BR #autom_g1        ; przejdz do obslugi
+                                                            g1
+    216    00011E                      
+    217    00011E                      ;--------------- obsluga g0 ------------
                                -------
-    231    000152              check001:
-    232    000152 1E93                 CMP #0001h, R14                 ; stan
-                                                                        001
-    233    000154 2720                 JNE check011
-    234    000156 2FB2         do001:  BIT #0004h, R15                 ;
-                                                                        przerwa
-                                                                       nie
-                                                                        timer_A
-    235    000158 B924                 JZ sleep
-    236    00015A 2FC2                 BIC #0004h, R15
-    237    00015C 1D53                 INC R13                         ;
-                                                                        licznik
-                                                                       _zer++
-    238    00015E 1C53                 INC R12                         ;
-                                                                        licznik
-                                                                       _cykli++
-    239    000160 D0B3....             BIT.B #001h, P1IN               ; g0 !=
-                                                                        0
-                                                                        ?
-    240    000164 0124                 JZ noclr001
-    241    000166 0D43                 CLR R13                        
+    218    00011E              check001:
+    219    00011E 1593                 CMP #0001h, R5      ; stan 001
+    220    000120 1F20                 JNE check011
+    221    000122 2FB2         do001:  BIT #0004h, R15     ; przerwanie
+                                                            timer_A
+    222    000124 4724                 JZ autom_g1
+    223    000126 1B53                 INC R11             ; licznik_zer++
+    224    000128 1A53                 INC R10             ; licznik_cykli++
+    225    00012A D0B3....             BIT.B #001h, P1IN   ; g0 != 0 ?
+    226    00012E 0124                 JZ noclr001
+    227    000130 0B43                 CLR R11                        
                                                                         
-    242    000168              noclr001:
-    243    000168 2D92                 CMP #0004h, R13                
+    228    000132              noclr001:
+    229    000132 2B92                 CMP #0004h, R11                
                                                                         
-    244    00016A 0C20                 JNE timeout001
-    245    00016C                      ; eliminacja drgan zakonczona
-    246    00016C 5440....             MOV.B P3IN, R4                  ; laduj
-                                                    licznik z P3
-    247    000170              
-    248    000170 12C3                 CLRC                            ;
-                                                                        korekcj
-                                                                       a
-                                                                        wczytan
-                                                                       ej
-                                                                        wartosc
-                                                                       i do
-                                                                        BCD
-    249    000172 04A3                 DADC R4
-    250    000174                             
-    251    000174 C044....             MOV.B R4, P6OUT                 ;
-                                                  wyswietl licznik poprzez
-                                                  P6
-    252    000178 3E400300             MOV #0003h, R14                 ; stan
-                                                                        :=
-                                                                        011
-    253    00017C 0D43                 CLR R13                         ; czysc
-                                                                        licznik
-                                                                       i
-                                                                        elimina
-                                                                       cji
-                                                                        drgan
-    254    00017E 0C43                 CLR R12
-    255    000180 3040....             BR #sleep
-    256    000184              timeout001:
-    257    000184 3C902000             CMP #0020h, R12
-    258    000188 A120                 JNE sleep
-    259    00018A 0E43                 MOV #0000h, R14                 ; stan
-                                                                        :=
-                                                                        000
-    260    00018C 0D43                 CLR R13                         ; czysc
-                                                                        licznik
-                                                                       i
-                                                                        elimina
-                                                                       cji
-                                                                        drgan
-    261    00018E 0C43                 CLR R12
-    262    000190 3FC00300             BIC #0003h, R15                 ; czysc
-                                                                        informa
-                                                                       cje o
-                                                                        obsludz
-                                                                       e g0,
-                                                                        g1
-    263    000194 F0D00300....         BIS.B #003h, P1IE               ; wlacz
-                                                                        przerwa
-                                                                       nia g0,
-                                                                        g1
-    264    00019A B0C01000....         BIC #0010h, TACTL               ; Timer
-                                                                        A stop
-                                                                        UP to
-                                                                        TACCR0
-    265    0001A0 3040....             BR #sleep
-    266    0001A4                      
-    267    0001A4              check011:
-    268    0001A4 3E900300             CMP #0003h, R14                 ; stan
-                                                                        011
-    269    0001A8 0820                 JNE check010
-    270    0001AA 2FB2                 BIT #0004h, R15                 ;
-                                                                        przerwa
-                                                                       nie
-                                                                        timer_A
-    271    0001AC 8F24                 JZ sleep
-    272    0001AE D0B3....             BIT.B #001h, P1IN               ; g0 !=
-                                                                        0
-                                                                        ?
-    273    0001B2 8C24                 JZ sleep
-    274    0001B4 2E43                 MOV #0002h, R14                 ; stan
-                                                                        :=
-                                                                        010
-    275    0001B6 3040....             BR #sleep
-    276    0001BA                      
-    277    0001BA              check010: 
-    278    0001BA 2E93                 CMP #0002h, R14                 ; stan
-                                                                        010
-    279    0001BC 2420                 JNE check101
-    280    0001BE 2FB2                 BIT #0004h, R15                 ;
-                                                                        przerwa
-                                                                       nie
-                                                                        timer_A
-    281    0001C0 8524                 JZ sleep
-    282    0001C2 2FC2                 BIC #0004h, R15
-    283    0001C4 1D53                 INC R13                         ;
-                                                                        licznik
-                                                                       _zer++
-    284    0001C6 1C53                 INC R12                         ;
-                                                                        licznik
-                                                                       _cykli++
-    285    0001C8 D0B3....             BIT.B #001h, P1IN               ; g0 !=
-                                                                        0
-                                                                        ?
-    286    0001CC 0120                 JNZ noclr010
-    287    0001CE 0D43                 CLR R13        
-    288    0001D0              noclr010:
-    289    0001D0 2D92                 CMP #0004h, R13                
+    230    000134 0A20                 JNE timeout001
+    231    000136                      ; eliminacja drgan zakonczona
+    232    000136 3FB2                 BIT #0008h, R15
+    233    000138 3FD2                 BIS #0008h, R15     ; ustaw mm:ss
+    234    00013A 0124                 JZ mmssset001
+    235    00013C 3FC2                 BIC #0008h, R15     ; ustaw hh:mm
+    236    00013E              mmssset001:
+    237    00013E                      ;MOV.B P3IN, R4                  ; laduj
+                                licznik z P3
+    238    00013E              
+    239    00013E                      ;CLRC                            ;
+                                korekcja wczytanej wartosci do BCD
+    240    00013E                     ; DADC R4
+    241    00013E                             
+    242    00013E 35400300             MOV #0003h, R5      ; stan := 011
+    243    000142 0B43                 CLR R11             ; czysc liczniki
+                                                            eliminacji
+                                                            drgan
+    244    000144 0A43                 CLR R10
+    245    000146 3040....             BR #autom_g1
+    246    00014A              timeout001:
+    247    00014A 3A902000             CMP #0020h, R10
+    248    00014E 3220                 JNE autom_g1
+    249    000150 0543                 MOV #0000h, R5      ; stan := 000
+    250    000152 0B43                 CLR R11             ; czysc liczniki
+                                                            eliminacji
+                                                            drgan
+    251    000154 0A43                 CLR R10
+    252    000156 1FC3                 BIC #0001h, R15     ; czysc informacje o
+                                                            obsludze g0
+    253    000158 D0D3....             BIS.B #001h, P1IE   ; wlacz przerwanie
+                                                            g0
+    254    00015C                      ;BIC #0010h, TACTL               ; Timer
+                                A stop UP to TACCR0
+    255    00015C 3040....             BR #autom_g1
+    256    000160                      
+    257    000160              check011:
+    258    000160 35900300             CMP #0003h, R5      ; stan 011
+    259    000164 0820                 JNE check010
+    260    000166 2FB2                 BIT #0004h, R15     ; przerwanie
+                                                            timer_A
+    261    000168 2524                 JZ autom_g1
+    262    00016A D0B3....             BIT.B #001h, P1IN   ; g0 != 0 ?
+    263    00016E 2224                 JZ autom_g1
+    264    000170 2543                 MOV #0002h, R5      ; stan := 010
+    265    000172 3040....             BR #autom_g1
+    266    000176                      
+    267    000176              check010: 
+    268    000176 2593                 CMP #0002h, R5      ; stan 010
+    269    000178 2A20                 JNE check101
+    270    00017A 2FB2                 BIT #0004h, R15     ; przerwanie
+                                                            timer_A
+    271    00017C 1B24                 JZ autom_g1
+    272    00017E 1B53                 INC R11             ; licznik_zer++
+    273    000180 1A53                 INC R10             ; licznik_cykli++
+    274    000182 D0B3....             BIT.B #001h, P1IN   ; g0 != 0 ?
+    275    000186 0120                 JNZ noclr010
+    276    000188 0B43                 CLR R11        
+    277    00018A              noclr010:
+    278    00018A 2B92                 CMP #0004h, R11                
                                                                         
-    290    0001D2 1020                 JNE timeout010
-    291    0001D4                      ; eliminacja drgan zakonczona
-    292    0001D4 B0C01000....         BIC #0010h, TACTL               ; Timer
-                                                                        A stop
-                                                                        UP to
-                                                                        TACCR0
-    293    0001DA 0E43                 MOV #0000h, R14                 ; stan
-                                                                        :=
-                                                                        000
-    294    0001DC 0D43                 CLR R13                         ; czysc
-                                                                        licznik
-                                                                       i
-                                                                        elimina
-                                                                       cji
-                                                                        drgan
-    295    0001DE 0C43                 CLR R12
-    296    0001E0 3FC00300             BIC #0003h, R15                 ; czysc
-                                                                        informa
-                                                                       cje o
-                                                                        obsludz
-                                                                       e g0,
-                                                                        g1
-    297    0001E4 F0C00300....         BIC.B #003h, P1IFG              ; czysc
-                                                                        informa
-                                                                       cje o
-                                                                        przerwa
-                                                                       niach
-                                                                        g0,
-                                                                        g1
-    298    0001EA F0D00300....         BIS.B #003h, P1IE               ; wlacz
-                                                                        przerwa
-                                                                       nia g0,
-                                                                        g1
-    299    0001F0 3040....             BR #sleep
-    300    0001F4              timeout010:
-    301    0001F4 3C902000             CMP #0020h, R12
-    302    0001F8 6920                 JNE sleep
-    303    0001FA 3E400300             MOV #0003h, R14                 ; stan
-                                                                        :=
-                                                                        011
-    304    0001FE 0D43                 CLR R13                         ; czysc
-                                                                        licznik
-                                                                       i
-                                                                        elimina
-                                                                       cji
-                                                                        drgan
-    305    000200 0C43                 CLR R12
-    306    000202 3040....             BR #sleep
-    307    000206                      
-    308    000206                      ;--------------- obsluga g1 ------------
+    279    00018C 0A20                 JNE timeout010
+    280    00018E                      ; eliminacja drgan zakonczona
+    281    00018E                      ;BIC #0010h, TACTL               ; Timer
+                                A stop UP to TACCR0
+    282    00018E 0543                 MOV #0000h, R5      ; stan := 000
+    283    000190 0B43                 CLR R11             ; czysc liczniki
+                                                            eliminacji
+                                                            drgan
+    284    000192 0A43                 CLR R10
+    285    000194 1FC3                 BIC #0001h, R15     ; czysc informacje o
+                                                            obsludze g0
+    286    000196 D0C3....             BIC.B #001h, P1IFG  ; czysc informacje o
+                                                            przerwaniach
+                                                            g0
+    287    00019A D0D3....             BIS.B #001h, P1IE   ; wlacz przerwania
+                                                            g0
+    288    00019E 3040....             BR #autom_g1
+    289    0001A2              timeout010:
+    290    0001A2 3A902000             CMP #0020h, R10
+    291    0001A6 0620                 JNE autom_g1
+    292    0001A8 35400300             MOV #0003h, R5      ; stan := 011
+    293    0001AC 0B43                 CLR R11             ; czysc liczniki
+                                                            eliminacji
+                                                            drgan
+    294    0001AE 0A43                 CLR R10
+    295    0001B0 3040....             BR #autom_g1
+    296    0001B4                      
+    297    0001B4              autom_g1:
+    298    0001B4                      ;------------- automat stanowy g1
+                                ----------------
+    299    0001B4              check100:
+    300    0001B4 0693                 CMP #0000h, R6      ; stan 100 (dla
+                                                            porzadku 000h)
+    301    0001B6 0B20                 JNE check101
+    302    0001B8 2FB3                 BIT #0002h, R15     ; g1 ?
+    303    0001BA FC27                 JZ autom_g1
+    304    0001BC E0C3....             BIC.B #002h, P1IE   ; wylacz przerwanie
+                                                            g1
+    305    0001C0 36400500             MOV #0005h, R6      ; stan := 101
+    306    0001C4 B0D01000....         BIS #0010h, TACTL   ; Timer A start UP
+                                                            to TACCR0
+    307    0001CA 3040....             BR #sleep
+    308    0001CE                      
+    309    0001CE                      ;--------------- obsluga g1 ------------
                                -------
-    309    000206              check101:        
-    310    000206 3E900500             CMP #0005h, R14                 ; stan
-                                                                        101
-    311    00020A 3320                 JNE check111
-    312    00020C 2FB2                 BIT #0004h, R15                 ;
-                                                                        przerwa
-                                                                       nie
-                                                                        timer_A
-    313    00020E 5E24                 JZ sleep
-    314    000210 2FC2                 BIC #0004h, R15
-    315    000212 1D53                 INC R13                         ;
-                                                                        licznik
-                                                                       _zer++
-    316    000214 1C53                 INC R12                         ;
-                                                                        licznik
-                                                                       _cykli++
-    317    000216 E0B3....             BIT.B #002h, P1IN               ; g1 !=
-                                                                        0
-                                                                        ?
-    318    00021A 0124                 JZ noclr101
-    319    00021C 0D43                 CLR R13        
-    320    00021E              noclr101:
-    321    00021E 2D92                 CMP #0004h, R13                
+    310    0001CE              check101:        
+    311    0001CE 36900500             CMP #0005h, R6      ; stan 101
+    312    0001D2 3320                 JNE check111
+    313    0001D4 2FB2                 BIT #0004h, R15     ; przerwanie
+                                                            timer_A
+    314    0001D6 5A24                 JZ sleep
+    315    0001D8 1D53                 INC R13             ; licznik_zer++
+    316    0001DA 1C53                 INC R12             ; licznik_cykli++
+    317    0001DC E0B3....             BIT.B #002h, P1IN   ; g1 != 0 ?
+    318    0001E0 0124                 JZ noclr101
+    319    0001E2 0D43                 CLR R13        
+    320    0001E4              noclr101:
+    321    0001E4 2D92                 CMP #0004h, R13                
                                                                         
-    322    000220 1920                 JNE timeout101
-    323    000222                      
-    324    000222 1483                 DEC R4                          ;
-                                                                        zmniejs
-                                                                       z
-                                                                        licznik
-                                                                        o
-                                                                        1
-    325    000224 0644                 MOV R4,R6 
-    326    000226 36F00F00             AND #000Fh, R6 
-    327    00022A 36900F00             CMP  #000Fh, R6 
-    328    00022E 0220                 JNE checkhigh101
-    329    000230 74C00600             BIC.B #006h, R4                 ; popraw
-                                                                        dolny
-                                                                        bajt do
-                                                                        BCD
-                                                                        jesli
-                                                                        trzeba
-    330    000234              checkhigh101:
-    331    000234 0644                 MOV R4, R6
-    332    000236 36F0F000             AND #00F0h, R6
-    333    00023A 3690F000             CMP #00F0h, R6
-    334    00023E 0220                 JNE checkend101
-    335    000240 34C06000             BIC #0060h, R4                  ; popraw
-                                                                        gorny
-                                                                        bajt do
-                                                                        BCD
-                                                                        jesli
-                                                                        trzeba
-    336    000244              checkend101:
-    337    000244 C044....             MOV.B R4, P6OUT                 ;
-                                                  wyswietl licznik poprzez
-                                                  P6
-    338    000248              
-    339    000248 3E400700             MOV #0007h, R14                 ; stan
-                                                                        :=
-                                                                        111
-    340    00024C 0D43                 CLR R13                         ; czysc
-                                                                        licznik
-                                                                       i
-                                                                        elimina
-                                                                       cji
-                                                                        drgan
-    341    00024E 0C43                 CLR R12
-    342    000250 3040....             BR #sleep
-    343    000254              timeout101:
-    344    000254 3C902000             CMP #0020h, R12
-    345    000258 3920                 JNE sleep
-    346    00025A 0E43                 MOV #0000h, R14                 ; stan
-                                                                        :=
-                                                                        000
-    347    00025C 0D43                 CLR R13                         ; czysc
-                                                                        licznik
-                                                                       i
-                                                                        elimina
-                                                                       cji
-                                                                        drgan
-    348    00025E 0C43                 CLR R12
-    349    000260 2FC3                 BIC #0002h, R15                 ; czysc
-                                                                        informa
-                                                                       cje o
-                                                                        obsludz
-                                                                       e
-                                                                        g1
-    350    000262 F0D00300....         BIS.B #003h, P1IE               ; wlacz
-                                                                        przerwa
-                                                                       nia g0,
-                                                                        g1
-    351    000268 B0C01000....         BIC #0010h, TACTL               ; Timer
-                                                                        A stop
-                                                                        UP to
-                                                                        TACCR0
-    352    00026E 3040....             BR #sleep
-    353    000272              
-    354    000272              check111:
-    355    000272 3E900700             CMP #0007h, R14                 ; stan
-                                                                        111
-    356    000276 0920                 JNE check110
-    357    000278 2FB2                 BIT #0004h, R15                 ;
-                                                                        przerwa
-                                                                       nie
-                                                                        timer_A
-    358    00027A 2824                 JZ sleep
-    359    00027C E0B3....             BIT.B #002h, P1IN               ; g1 !=
-                                                                        0
-                                                                        ?
-    360    000280 2524                 JZ sleep
-    361    000282 3E400600             MOV #0006h, R14                 ; stan
-                                                                        :=
-                                                                        110
-    362    000286 3040....             BR #sleep
-    363    00028A              
-    364    00028A              check110: 
-    365    00028A                      ;CMP #0006h, R14                ; stan
-                                110, nie musimy sprawdzac
-    366    00028A 2FB2                 BIT #0004h, R15                 ;
-                                                                        przerwa
-                                                                       nie
-                                                                        timer_A
-    367    00028C 1F24                 JZ sleep
-    368    00028E 2FC2                 BIC #0004h, R15
-    369    000290 1D53                 INC R13                         ;
-                                                                        licznik
-                                                                       _zer++
-    370    000292 1C53                 INC R12                         ;
-                                                                        licznik
-                                                                       _cykli++
-    371    000294 E0B3....             BIT.B #002h, P1IN               ; g1 !=
-                                                                        0
-                                                                        ?
-    372    000298 0120                 JNZ noclr110
-    373    00029A 0D43                 CLR R13        
-    374    00029C              noclr110:
-    375    00029C 2D92                 CMP #0004h, R13                
+    322    0001E6 1C20                 JNE timeout101
+    323    0001E8                      
+    324    0001E8 0443                 CLR R4
+    325    0001EA 5440....             MOV.B P4IN, R4      ; laduj mm do
+                                                            R4
+    326    0001EE 34903C00             CMP #60, R4
+    327    0001F2 0238                 JL nommchange101
+    328    0001F4 34403B00             MOV #59, R4
+    329    0001F8              nommchange101:
+    330    0001F8 0454                 RLA R4
+    331    0001FA 0454                 RLA R4
+    332    0001FC 0454                 RLA R4
+    333    0001FE 0454                 RLA R4              ; R4 == [mm00]
+    334    000200                      
+    335    000200 0E43                 CLR R14
+    336    000202 5E40....             MOV.B P3IN, R14     ; laduj hh do
+                                                            R14
+    337    000206 3E901800             CMP #24, R14
+    338    00020A 0238                 JL nohhchange101
+    339    00020C 3E401700             MOV #23, R14        ; R14 = [00hh]
+    340    000210              nohhchange101:
+    341    000210              
+    342    000210                      ; TODO : zablokowanie zegara timerB
+    343    000210 084E                 MOV R14, R8         ; ustaw hh
+    344    000212 0944                 MOV R4, R9          ; ustaw mmss
+    345    000214                      ; TODO : odblokowanie zegara timerB
+    346    000214              
+    347    000214 36400700             MOV #0007h, R6      ; stan := 111
+    348    000218 0D43                 CLR R13             ; czysc liczniki
+                                                            eliminacji
+                                                            drgan
+    349    00021A 0C43                 CLR R12
+    350    00021C 3040....             BR #sleep
+    351    000220              timeout101:
+    352    000220 3C902000             CMP #0020h, R12
+    353    000224 3320                 JNE sleep
+    354    000226 0643                 MOV #0000h, R6      ; stan := 100
+    355    000228 0D43                 CLR R13             ; czysc liczniki
+                                                            eliminacji
+                                                            drgan
+    356    00022A 0C43                 CLR R12
+    357    00022C 2FC3                 BIC #0002h, R15     ; czysc informacje o
+                                                            obsludze g1
+    358    00022E E0C3....             BIC.B #002h, P1IFG  ; czysc informacje o
+                                                            przerwaniu
+                                                            g1
+    359    000232 E0D3....             BIS.B #002h, P1IE   ; wlacz przerwania
+                                                            g1
+    360    000236 3040....             BR #sleep
+    361    00023A              
+    362    00023A              check111:
+    363    00023A 36900700             CMP #0007h, R6      ; stan 111
+    364    00023E 0920                 JNE check110
+    365    000240 2FB2                 BIT #0004h, R15     ; przerwanie
+                                                            timer_A
+    366    000242 2424                 JZ sleep
+    367    000244 E0B3....             BIT.B #002h, P1IN   ; g1 != 0 ?
+    368    000248 2124                 JZ sleep
+    369    00024A 36400600             MOV #0006h, R6      ; stan := 110
+    370    00024E 3040....             BR #sleep
+    371    000252              
+    372    000252              check110: 
+    373    000252                      ;CMP #0006h, R6     ; stan 110, nie
+                                musimy sprawdzac
+    374    000252 2FB2                 BIT #0004h, R15     ; przerwanie
+                                                            timer_A
+    375    000254 1B24                 JZ sleep
+    376    000256                      
+    377    000256 1D53                 INC R13             ; licznik_zer++
+    378    000258 1C53                 INC R12             ; licznik_cykli++
+    379    00025A E0B3....             BIT.B #002h, P1IN   ; g1 != 0 ?
+    380    00025E 0120                 JNZ noclr110
+    381    000260 0D43                 CLR R13        
+    382    000262              noclr110:
+    383    000262 2D92                 CMP #0004h, R13                
                                                                         
-    376    00029E 0D20                 JNE timeout110
-    377    0002A0                      ; eliminacja drgan zakonczona
-    378    0002A0 B0C01000....         BIC #0010h, TACTL               ; Timer
-                                                                        A stop
-                                                                        UP to
-                                                                        TACCR0
-    379    0002A6 0E43                 MOV #0000h, R14                 ; stan
-                                                                        :=
-                                                                        000
-    380    0002A8 0D43                 CLR R13                         ; czysc
-                                                                        licznik
-                                                                       i
-                                                                        elimina
-                                                                       cji
-                                                                        drgan
-    381    0002AA 0C43                 CLR R12
-    382    0002AC 2FC3                 BIC #0002h, R15                 ; czysc
-                                                                        informa
-                                                                       cje o
-                                                                        obsludz
-                                                                       e
-                                                                        g1
-    383    0002AE E0C3....             BIC.B #002h, P1IFG              ; czysc
-                                                                        informa
-                                                                       cje o
-                                                                        przerwa
-                                                                       niu
-                                                                        g1
-    384    0002B2 E0D3....             BIS.B #002h, P1IE               ; wlacz
-                                                                        przerwa
-                                                                       nie
-                                                                        g1
-    385    0002B6 3040....             BR #sleep
-    386    0002BA              timeout110:
-    387    0002BA 3C902000             CMP #0020h, R12
-    388    0002BE 0620                 JNE sleep
-    389    0002C0 3E400700             MOV #0007h, R14                 ; stan
-                                                                        :=
-                                                                        111
-    390    0002C4 0D43                 CLR R13                         ; czysc
-                                                                        licznik
-                                                                       i
-                                                                        elimina
-                                                                       cji
-                                                                        drgan
-    391    0002C6 0C43                 CLR R12
-    392    0002C8 3040....             BR #sleep
-    393    0002CC                     
-    394    0002CC              sleep:
-    395    0002CC 32D01800             BIS #GIE+CPUOFF, SR             ;
-                                                                        przejsc
-                                                                       ie do
-                                                                        LPM1
-    396    0002D0 3040....             BR #app                         ; skok
-                                                                        na
-                                                                        poczate
-                                                                       k czesci
-                                                                        aplikac
-                                                                       yjnej
-    397    0002D4              
-    398    0002D4                      END
+    384    000264 0A20                 JNE timeout110
+    385    000266                      ; eliminacja drgan zakonczona
+    386    000266 0643                 MOV #0000h, R6      ; stan := 000
+    387    000268 0D43                 CLR R13             ; czysc liczniki
+                                                            eliminacji
+                                                            drgan
+    388    00026A 0C43                 CLR R12
+    389    00026C 2FC3                 BIC #0002h, R15     ; czysc informacje o
+                                                            obsludze g1
+    390    00026E E0C3....             BIC.B #002h, P1IFG  ; czysc informacje o
+                                                            przerwaniu
+                                                            g1
+    391    000272 E0D3....             BIS.B #002h, P1IE   ; wlacz przerwanie
+                                                            g1
+    392    000276 3040....             BR #sleep
+    393    00027A              timeout110:
+    394    00027A 3C902000             CMP #0020h, R12
+    395    00027E 0620                 JNE sleep
+    396    000280 36400700             MOV #0007h, R6      ; stan := 111
+    397    000284 0D43                 CLR R13             ; czysc liczniki
+                                                            eliminacji
+                                                            drgan
+    398    000286 0C43                 CLR R12
+    399    000288 3040....             BR #sleep
+    400    00028C                     
+    401    00028C              sleep:
+    402    00028C 2FC2                 BIC #0004h, R15     ; wyczyszczenie info
+                                                            o przerwaniu
+    403    00028E                                          ;  timerA jesli
+                                bylo
+    404    00028E 3FB00300             BIT #0003h, R15     ; czy trwa obsluga
+                                                            g0 lub g1?
+    405    000292 0320                 JNZ enter_lpm       ; jesli tak,
+                                                            spij
+    406    000294 B0C01000....         BIC #0010h, TACTL   ; Timer A stop UP to
+                                                            TACCR0
+    407    00029A               
+    408    00029A              enter_lpm:        
+    409    00029A 32D01800             BIS #GIE+CPUOFF, SR ; przejscie do
+                                                            LPM1
+    410    00029E 3040....             BR #app             ; skok na poczatek
+                                                            czesci aplikacyjnej
+    411    0002A2              
+    412    0002A2                      END
 ##############################
-#          CRC:42C           #
+#          CRC:E051          #
 #        Errors:   0         #
 #        Warnings: 0         #
-#         Bytes: 756         #
+#         Bytes: 706         #
 ##############################
 
 
