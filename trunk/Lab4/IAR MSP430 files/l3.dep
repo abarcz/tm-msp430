@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<project>
+  <fileVersion>2</fileVersion>
+  <fileChecksum>52904875</fileChecksum>
+  <configuration>
+    <name>Debug</name>
+    <outputs>
+      <file>$PROJ_DIR$\Debug\Obj\asm.r43</file>
+      <file>$TOOLKIT_DIR$\inc\msp430x16x.h</file>
+      <file>$TOOLKIT_DIR$\config\lnk430F1611.xcl</file>
+      <file>$PROJ_DIR$\Debug\Exe\l3.d43</file>
+      <file>$PROJ_DIR$\asm.s43</file>
+      <file>$TOOLKIT_DIR$\config\multiplier.xcl</file>
+      <file>$TOOLKIT_DIR$\inc\msp430.h</file>
+      <file>$PROJ_DIR$\Debug\List\asm.lst</file>
+    </outputs>
+    <file>
+      <name>$PROJ_DIR$\Debug\Exe\l3.d43</name>
+      <inputs>
+        <tool>
+          <name>XLINK</name>
+          <file> 2 5 0</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\asm.s43</name>
+      <outputs>
+        <tool>
+          <name>A430</name>
+          <file> 0 7</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>A430</name>
+          <file> 6 1</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>[ROOT_NODE]</name>
+      <outputs>
+        <tool>
+          <name>XLINK</name>
+          <file> 3</file>
+        </tool>
+      </outputs>
+    </file>
+  </configuration>
+  <configuration>
+    <name>Release</name>
+    <outputs>
+      <file>$TOOLKIT_DIR$\inc\msp430x16x.h</file>
+      <file>$TOOLKIT_DIR$\config\lnk430F1611.xcl</file>
+      <file>$PROJ_DIR$\Release\Obj\asm.r43</file>
+      <file>$PROJ_DIR$\Release\Exe\l3.txt</file>
+      <file>$PROJ_DIR$\asm.s43</file>
+      <file>$TOOLKIT_DIR$\config\multiplier.xcl</file>
+      <file>$TOOLKIT_DIR$\inc\msp430.h</file>
+    </outputs>
+    <file>
+      <name>$PROJ_DIR$\Release\Exe\l3.txt</name>
+      <inputs>
+        <tool>
+          <name>XLINK</name>
+          <file> 1 5 2</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\asm.s43</name>
+      <outputs>
+        <tool>
+          <name>A430</name>
+          <file> 2</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>A430</name>
+          <file> 6 0</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>[ROOT_NODE]</name>
+      <outputs>
+        <tool>
+          <name>XLINK</name>
+          <file> 3</file>
+        </tool>
+      </outputs>
+    </file>
+  </configuration>
+</project>
+
+
