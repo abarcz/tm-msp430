@@ -12,9 +12,33 @@
       <name>C-SPY</name>
       <archiveVersion>4</archiveVersion>
       <data>
-        <version>22</version>
+        <version>24</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>1</debug>
+        <option>
+          <name>OCImagesSuppressCheck1</name>
+          <state>0</state>
+        </option>
+        <option>
+          <name>OCImagesPath1</name>
+          <state></state>
+        </option>
+        <option>
+          <name>OCImagesSuppressCheck2</name>
+          <state>0</state>
+        </option>
+        <option>
+          <name>OCImagesPath2</name>
+          <state></state>
+        </option>
+        <option>
+          <name>OCImagesSuppressCheck3</name>
+          <state>0</state>
+        </option>
+        <option>
+          <name>OCImagesPath3</name>
+          <state></state>
+        </option>
         <option>
           <name>CInput</name>
           <state>1</state>
@@ -83,13 +107,21 @@
           <name>IVBASE</name>
           <state>1</state>
         </option>
+        <option>
+          <name>CPUTAG</name>
+          <state>1</state>
+        </option>
+        <option>
+          <name>L092Mode</name>
+          <state>1</state>
+        </option>
       </data>
     </settings>
     <settings>
       <name>430FET</name>
       <archiveVersion>1</archiveVersion>
       <data>
-        <version>15</version>
+        <version>21</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>1</debug>
         <option>
@@ -131,7 +163,7 @@
         </option>
         <option>
           <name>TargetVoltage</name>
-          <state>3.0</state>
+          <state>3.3</state>
         </option>
         <option>
           <name>AllowLockedFlashAccessP7</name>
@@ -146,12 +178,8 @@
           <state>0</state>
         </option>
         <option>
-          <name>OProtocolTypeDefault</name>
-          <state>0</state>
-        </option>
-        <option>
           <name>CRadioProtocolType</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>CCRadioModuleTypeSlave</name>
@@ -175,7 +203,7 @@
         </option>
         <option>
           <name>FetConnection</name>
-          <version>1</version>
+          <version>2</version>
           <state>0</state>
         </option>
         <option>
@@ -194,13 +222,41 @@
           <name>AllowAccessToBSL</name>
           <state>0</state>
         </option>
+        <option>
+          <name>OTargetVccTypeDefault</name>
+          <state>0</state>
+        </option>
+        <option>
+          <name>CCBetaDll</name>
+          <state>1</state>
+        </option>
+        <option>
+          <name>GPassword</name>
+          <state></state>
+        </option>
+        <option>
+          <name>DebugLPM5</name>
+          <state>0</state>
+        </option>
+        <option>
+          <name>LPM5Slave</name>
+          <state>0</state>
+        </option>
+        <option>
+          <name>CRadioAutoManualType</name>
+          <state>0</state>
+        </option>
+        <option>
+          <name>ExternalCodeDownload</name>
+          <state>0</state>
+        </option>
       </data>
     </settings>
     <settings>
       <name>SIM430</name>
       <archiveVersion>1</archiveVersion>
       <data>
-        <version>3</version>
+        <version>4</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>1</debug>
         <option>
@@ -215,6 +271,18 @@
           <name>derivativeSim</name>
           <state>0</state>
         </option>
+        <option>
+          <name>SimEnablePSP</name>
+          <state>0</state>
+        </option>
+        <option>
+          <name>SimPspOverrideConfig</name>
+          <state>0</state>
+        </option>
+        <option>
+          <name>SimPspConfigFile</name>
+          <state>###Uninitialized###</state>
+        </option>
       </data>
     </settings>
     <debuggerPlugins>
@@ -228,6 +296,10 @@
       </plugin>
       <plugin>
         <file>$TOOLKIT_DIR$\plugins\rtos\PowerPac\PowerPacRTOS.ewplugin</file>
+        <loadFlag>0</loadFlag>
+      </plugin>
+      <plugin>
+        <file>$TOOLKIT_DIR$\plugins\rtos\uCOS-II\uCOS-II-286-KA-CSpy.ewplugin</file>
         <loadFlag>0</loadFlag>
       </plugin>
       <plugin>
@@ -266,9 +338,33 @@
       <name>C-SPY</name>
       <archiveVersion>4</archiveVersion>
       <data>
-        <version>22</version>
+        <version>24</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>0</debug>
+        <option>
+          <name>OCImagesSuppressCheck1</name>
+          <state>0</state>
+        </option>
+        <option>
+          <name>OCImagesPath1</name>
+          <state></state>
+        </option>
+        <option>
+          <name>OCImagesSuppressCheck2</name>
+          <state>0</state>
+        </option>
+        <option>
+          <name>OCImagesPath2</name>
+          <state></state>
+        </option>
+        <option>
+          <name>OCImagesSuppressCheck3</name>
+          <state>0</state>
+        </option>
+        <option>
+          <name>OCImagesPath3</name>
+          <state></state>
+        </option>
         <option>
           <name>CInput</name>
           <state>1</state>
@@ -337,13 +433,21 @@
           <name>IVBASE</name>
           <state>1</state>
         </option>
+        <option>
+          <name>CPUTAG</name>
+          <state>1</state>
+        </option>
+        <option>
+          <name>L092Mode</name>
+          <state>1</state>
+        </option>
       </data>
     </settings>
     <settings>
       <name>430FET</name>
       <archiveVersion>1</archiveVersion>
       <data>
-        <version>15</version>
+        <version>21</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>0</debug>
         <option>
@@ -400,10 +504,6 @@
           <state>0</state>
         </option>
         <option>
-          <name>OProtocolTypeDefault</name>
-          <state>0</state>
-        </option>
-        <option>
           <name>CRadioProtocolType</name>
           <state>1</state>
         </option>
@@ -429,7 +529,7 @@
         </option>
         <option>
           <name>FetConnection</name>
-          <version>1</version>
+          <version>2</version>
           <state>0</state>
         </option>
         <option>
@@ -448,13 +548,41 @@
           <name>AllowAccessToBSL</name>
           <state>0</state>
         </option>
+        <option>
+          <name>OTargetVccTypeDefault</name>
+          <state>0</state>
+        </option>
+        <option>
+          <name>CCBetaDll</name>
+          <state>1</state>
+        </option>
+        <option>
+          <name>GPassword</name>
+          <state>###Uninitialized###</state>
+        </option>
+        <option>
+          <name>DebugLPM5</name>
+          <state>0</state>
+        </option>
+        <option>
+          <name>LPM5Slave</name>
+          <state>0</state>
+        </option>
+        <option>
+          <name>CRadioAutoManualType</name>
+          <state>0</state>
+        </option>
+        <option>
+          <name>ExternalCodeDownload</name>
+          <state>0</state>
+        </option>
       </data>
     </settings>
     <settings>
       <name>SIM430</name>
       <archiveVersion>1</archiveVersion>
       <data>
-        <version>3</version>
+        <version>4</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>0</debug>
         <option>
@@ -469,6 +597,18 @@
           <name>derivativeSim</name>
           <state>0</state>
         </option>
+        <option>
+          <name>SimEnablePSP</name>
+          <state>0</state>
+        </option>
+        <option>
+          <name>SimPspOverrideConfig</name>
+          <state>0</state>
+        </option>
+        <option>
+          <name>SimPspConfigFile</name>
+          <state>###Uninitialized###</state>
+        </option>
       </data>
     </settings>
     <debuggerPlugins>
@@ -482,6 +622,10 @@
       </plugin>
       <plugin>
         <file>$TOOLKIT_DIR$\plugins\rtos\PowerPac\PowerPacRTOS.ewplugin</file>
+        <loadFlag>0</loadFlag>
+      </plugin>
+      <plugin>
+        <file>$TOOLKIT_DIR$\plugins\rtos\uCOS-II\uCOS-II-286-KA-CSpy.ewplugin</file>
         <loadFlag>0</loadFlag>
       </plugin>
       <plugin>
