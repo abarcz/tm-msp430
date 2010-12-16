@@ -73,10 +73,12 @@ main:   NOP                   ; main program
         BIS #0010h, TACCTL0   ; wlacz przerwania CCIFG0
         
         ; przygotuj licznik timer B w trybie continous
-        MOV #163 ,TBCCR1     ; wartosc do liczenia przy odswiezaniu
+        MOV #163 ,TBCCR1      ; wartosc do liczenia przy odswiezaniu
                               ; 2ms -> 600 -> 258 
         MOV #32768 ,TBCCR2    ; wartosc do liczenia przy pomiarze czasu
                               ; 1 sekunda-> 30000 -> 7530h
+        MOV #16384, TBCCR3    ; wartosc do liczenia przy miganiu kropka
+                              ; zapalanie/gaszenie co 0.5s
  
 
         BR #init_registers    ; przeskocz procedury obslugi przerwan
@@ -101,7 +103,6 @@ IO1_clear:
         
 timer_A_int:
         BIS #0004h, R15       ; ustaw znacznik timer_A_TACCR0
-        ;BIC #0001h, TACTL
         PUSH R6
         MOV 2(SP), R6
         BIC #CPUOFF, R6       ; zmodyfikuj lezace na stosie SR
@@ -115,7 +116,7 @@ timer_B_int:
         RETI                  ; Vector 0: No interrupt 
         JMP CCIFG_1_HND       ; Vector 2: Module 1 
         JMP CCIFG_2_HND       ; Vector 4: Module 2 
-        RETI                  ; Vector 6: Module 3
+        JMP CCIFG_3_HND       ; Vector 6: Module 3
         RETI                  ; Vector 8: Module 4
         RETI                  ; Vector 10: Module 5
         RETI                  ; Vector 12: Module 6
@@ -126,7 +127,7 @@ TBIFG_HND:                    ; Vector 14: TIMOV Flag
 CCIFG_1_HND:                  ; Vector 4: Module 2
                               ; odswiezanie 
         PUSH R4                            
-        MOV R7,R4             ;obsluga anod
+        MOV R7,R4             ; obsluga anod
         
         CMP #0000H,R4
         JNE CHECK_6
@@ -141,7 +142,7 @@ WYSWIETL_ANODY:
         INV R4
         MOV.B R4,P5OUT
         
-        MOV R9,R4             ;kopiuje minuty do R4 
+        MOV R9,R4             ; kopiuje minuty do R4 
         BIT #0008h, R15       ; sprawdza czy godziny czy minuty    
         JZ HOURS      
         JMP WYSWIETL
@@ -157,7 +158,7 @@ WYSWIETL:
         JMP CYFRA3
         JMP CYFRA4
         
-CYFRA1: AND #000FH,R4         ;and-wybranie odpowiedniej cyfry
+CYFRA1: AND #000FH,R4         ; and-wybranie odpowiedniej cyfry
         JMP RETURN1
 CYFRA2: AND #00F0H,R4       
         RRA R4                ; przesuniecie na wlasciwe miejsce
@@ -175,24 +176,23 @@ CYFRA4: AND #0F000H,R4
         RRA R4
         RRA R4        
 RETURN1:
-        BIS #00F0H,R4
+        BIS #00F0H, R4        ; ustawienie bitow sterujacych
         CMP #0004H, R7
         JNE CD
-        BIT #0008H,R15
+        BIT #0008H,R15        ; hh:mm?
         JNZ CD
-        BIC #0080H,R4
+        BIT #0010h, R15       ; bit sterujacy wyswietlaniem kropki
+        JNZ CD
+        BIC #0080H,R4         ; wyswietlaj kropke w hh:mm co 0.5s
 CD:
         MOV.B R4,P6OUT
         ADD #0002H, R7
-        AND #0007H,R7
-        
-
-
+        AND #0007H, R7 
         POP R4
         ADD #163,TBCCR1       ; ustawienie nowego punktu do liczenia
         JMP timer_B_int       ; sprawdza czy nie ma innego przerwania do 
                               ; obsluzenia
-
+                              
 CCIFG_2_HND:                  ; Vector 2: Module 1
         PUSH R7               ; liczenie czasu
         INC R9
@@ -214,17 +214,25 @@ Minuty:
         DADC R8
         CMP #024h,R8
         JNE RETURN
-        MOV #00h,R8           ;przekrec licznik od poczatku
+        MOV #00h,R8           ; przekrec licznik od poczatku
 RETURN: ADD #32768,TBCCR2     ; ustawienie nowego punktu do liczenia
         POP R7
-
         JMP timer_B_int
+        
+CCIFG_3_HND:
+        BIT #0010h, R15       ; toggle bit 4
+        BIS #0010h, R15
+        JZ ccifg3setok
+        BIC #0010h, R15
+ccifg3setok:
+        ADD #16384, TBCCR3    ; przekrec licznik od poczatku
+        JMP timer_B_int
+        
 default_int:
         BIC.B #080h, P1OUT    ; zapala diode bledu
         RETI
         
 init_registers:
-
         CLR R5
         CLR R6
         CLR R7
@@ -235,16 +243,11 @@ init_registers:
         CLR R12
         CLR R13
         CLR R15
-        ;MOV.B #0FFH, P5OUT     ;DEBUG
         BIS #0010h, TBCCTL1   ; wlacz przerwania 
         BIS #0010h, TBCCTL2   ; wlacz przerwania 
-        BIS #0120h, TBCTL     ; wlacz przerwania
-                              ; ustaw zegar timera na ACLK
-                              ; wystartuj liczenie
-                              
-                              
-                              
-                              
+        BIS #0010h, TBCCTL3   ; wlacz przerwania 
+        BIS #0120h, TBCTL     ; ustaw zegar timera na ACLK
+                              ; wystartuj liczenie             
                       
 app:        
         ; R4  - rejestr obliczen tymczasowych
@@ -263,6 +266,7 @@ app:
         ; R14 - rejestr obliczen tymczasowych 
         ;     
         ; R15 - znaczniki uzywane przez przerwania i aplikacje
+        ;       b4: znacznik migania kropka wyswietlacza
         ;       b3: 1 => wyswietlanie mm:ss
         ;           0 => wyswietlanie hh:mm
         ;       b2: nastapilo przerwanie timera A
@@ -328,7 +332,6 @@ check011:
         
 check010: 
         ;CMP #0002h, R5     ; stan 010, nie musimy sprawdzac
-        ;JNE check101
         BIT #0004h, R15     ; przerwanie timer_A
         JZ autom_g1
         INC R11             ; licznik_zer++
