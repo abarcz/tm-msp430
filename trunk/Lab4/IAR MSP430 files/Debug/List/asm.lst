@@ -1,23 +1,23 @@
       1    00FFFE              #include "msp430.h"             ; #define
-                                controlled include file
+                                controlled include file.
       2    00FFFE              
       3    00FFFE                      NAME    main            ; module
-                                name
+                                name.
       4    00FFFE              
       5    000000                      PUBLIC  main            ; make the main
                                                                 label
-                                                                visible
+                                                                visible.
       6    00FFFE                                              ; outside this
-                                module
+                                module.
       7    00FFFE                      ORG     0FFFEh
       8    00FFFE ....                 DC16    init            ; set reset
                                                                 vector to
                                                                 'init'
-                                                                label
+                                                                label.
       9    010000                      
      10    010000                      ; ustawienie wszystkich wektorow
-                                przerwan oprocz
-     11    010000                      ; Reset na domyslna obsluge
+                                przerwan oprocz.
+     11    010000                      ; Reset na domyslna obsluge.
      12    00FFFC                      ORG     0FFFCh
      13    00FFFC ....                 DC16    default_int
      14    00FFFA                      ORG     0FFFAh
@@ -53,153 +53,153 @@
      44    00FFF8 ....                 DC16    timer_B_int
      45    00FFFA                      
      46    000000                      RSEG    CSTACK        ; pre-declaration
-  of segment
+  of segment.
      47    000000                      RSEG    CODE          ; place program in
-  'CODE' segment
+  'CODE' segment.
      48    000000              
      49    000000 3140....     init:   MOV     #SFE(CSTACK), SP        ; set up
-                                                            stack
+                                                            stack.
      50    000004              
-     51    000004 0343         main:   NOP                   ; main program
+     51    000004 0343         main:   NOP                   ; main program.
      52    000006 B240805A2001         MOV.W   #WDTPW+WDTHOLD,&WDTCTL  ; Stop
                                                                         watchdo
                                                                        g
-                                                                        timer
+                                                                        timer.
      53    00000C                        
-     54    00000C                      ; b0 - g0 - przycisk ladowania
+     54    00000C                      ; b0 - g0 - przycisk ladowania.
      55    00000C                      ; b1 - g1 - przycisk zliczania w
-                                dol
+                                dol.
      56    00000C F0D00300....         BIS.B #003h, P1IES    ; ustaw edge
                                                               select na H->L
                                                               dla b0,
-                                                              b1
+                                                              b1.
      57    000012 F0D00300....         BIS.B #003h, P1IE     ; wlacz przerwanie
                                                               dla b0,
-                                                              b1
+                                                              b1.
      58    000018                      
      59    000018 F0D08000....         BIS.B #080h, P1DIR    ; ustaw b7 jako
-                                                              bit wyjsciowy
+                                                              bit wyjsciowy.
      60    00001E                                            ; (dioda
-                                bledu)
+                                bledu).
      61    00001E F0D08000....         BIS.B #080h, P1OUT    ; gasi diode
-                                                              bledu
+                                                              bledu.
      62    000024                      
      63    000024 F0D3....             BIS.B #0FFh, P5DIR    ; anody wyswietlac
-                                                             za
+                                                             za.
      64    000028 F0D3....             BIS.B #0FFh, P6DIR    ; ustaw P6 jako
-                                                              port wyjsciowy
+                                                              port wyjsciowy.
      65    00002C                      
-     66    00002C                      ; przygotuj licznik timer A
+     66    00002C                      ; przygotuj licznik timer A.
      67    00002C                      ; licznik A ma liczyc w trybie UP od 0
-                                do wartosci TACCR0
+                                do wartosci TACCR0.
      68    00002C                      ; przerwanie TACCR0 wykorzystywane jest
-                                przez obsluge
-     69    00002C                      ; eliminacji drgan
+                                przez obsluge.
+     69    00002C                      ; eliminacji drgan.
      70    00002C B0D00001....         BIS #0100h, TACTL     ; ustaw zegar
                                                               timera na
-                                                              ACLK
+                                                              ACLK.
      71    000032 B0400500....         MOV #0005h, TACCR0    ; ustaw 5 jako
                                                               wartosc do ktorej
-                                                              
-     72    000038                                            ; liczy timer
+                                                              .
+     72    000038                                            ; liczy timer.
      73    000038 B0D01000....         BIS #0010h, TACCTL0   ; wlacz przerwania
-                                                              CCIFG0
+                                                              CCIFG0.
      74    00003E                      
      75    00003E                      ; przygotuj licznik timer B w trybie
-                                continous
+                                continous.
      76    00003E B040A300....         MOV #163 ,TBCCR1      ; wartosc do
                                                               liczenia przy
-                                                              odswiezaniu
+                                                              odswiezaniu.
      77    000044                                            ; 2ms -> 600 ->
-                                258 
+                                258 .
      78    000044 B0400080....         MOV #32768 ,TBCCR2    ; wartosc do
                                                               liczenia przy
                                                               pomiarze
-                                                              czasu
+                                                              czasu.
      79    00004A                                            ; 1 sekunda->
-                                30000 -> 7530h
+                                30000 -> 7530h.
      80    00004A B0400040....         MOV #16384, TBCCR3    ; wartosc do
                                                               liczenia przy
                                                               miganiu
-                                                              kropka
+                                                              kropka.
      81    000050                                            ; zapalanie/gaszen
-                               ie co 0.5s
+                               ie co 0.5s.
      82    000050               
      83    000050              
      84    000050 3040....             BR #init_registers    ; przeskocz
                                                               procedury obslugi
-                                                              przerwan
+                                                              przerwan.
      85    000054                      
-     86    000054                      ; procedury obslugi przerwan
+     86    000054                      ; procedury obslugi przerwan.
      87    000054              IO1_interrupt:
-     88    000054 D0B3....             BIT.B #001h, P1IFG    ; g0 ?
+     88    000054 D0B3....             BIT.B #001h, P1IFG    ; g0 ?.
      89    000058 0124                 JZ IO1_checkg1
      90    00005A 1FD3                 BIS #0001h, R15       ; ustaw znacznik
-                                                              g0
+                                                              g0.
      91    00005C              IO1_checkg1:
-     92    00005C E0B3....             BIT.B #002h, P1IFG    ; g1 ?
+     92    00005C E0B3....             BIT.B #002h, P1IFG    ; g1 ?.
      93    000060 0124                 JZ IO1_clear
      94    000062 2FD3                 BIS #0002h, R15       ; ustaw znacznik
-                                                              g1
+                                                              g1.
      95    000064              IO1_clear:
      96    000064 F0C3....             BIC.B #0FFh, P1IFG    ; czysc znaczniki
-                                                              przerwan
+                                                              przerwan.
      97    000068 0612                 PUSH R6
      98    00006A 16410200             MOV 2(SP), R6
      99    00006E 36C01000             BIC #CPUOFF, R6       ; zmodyfikuj
                                                               lezace na stosie
-                                                              SR
+                                                              SR.
     100    000072 81460200             MOV R6, 2(SP)         ; aby obudzic
-                                                              procesor
+                                                              procesor.
     101    000076 3641                 POP R6
     102    000078 0013                 RETI
     103    00007A                      
     104    00007A              timer_A_int:
     105    00007A 2FD2                 BIS #0004h, R15       ; ustaw znacznik
-                                                              timer_A_TACCR0
+                                                              timer_A_TACCR0.
     106    00007C 0612                 PUSH R6
     107    00007E 16410200             MOV 2(SP), R6
     108    000082 36C01000             BIC #CPUOFF, R6       ; zmodyfikuj
                                                               lezace na stosie
-                                                              SR
+                                                              SR.
     109    000086 81460200             MOV R6, 2(SP)         ; aby obudzic
-                                                              procesor
+                                                              procesor.
     110    00008A 3641                 POP R6
     111    00008C 0013                 RETI
     112    00008E              
     113    00008E              timer_B_int:
     114    00008E              
     115    00008E 10521E01             ADD &TBIV,PC          ; Add offset to
-                                                              Jump table
+                                                              Jump table.
     116    000092 0013                 RETI                  ; Vector 0: No
                                                               interrupt
-                                                              
+                                                              .
     117    000094 063C                 JMP CCIFG_1_HND       ; Vector 2: Module
-                                                              1 
+                                                              1 .
     118    000096 493C                 JMP CCIFG_2_HND       ; Vector 4: Module
-                                                              2 
+                                                              2 .
     119    000098 693C                 JMP CCIFG_3_HND       ; Vector 6: Module
-                                                              3
+                                                              3.
     120    00009A 0013                 RETI                  ; Vector 8: Module
-                                                              4
+                                                              4.
     121    00009C 0013                 RETI                  ; Vector 10:
-                                                              Module 5
+                                                              Module 5.
     122    00009E 0013                 RETI                  ; Vector 12:
-                                                              Module 6
+                                                              Module 6.
     123    0000A0                      
     124    0000A0              TBIFG_HND:                    ; Vector 14: TIMOV
-                                Flag
+                                Flag.
     125    0000A0                                            ; Task starts
-                                here
+                                here.
     126    0000A0 0013                 RETI 
     127    0000A2              CCIFG_1_HND:                  ; Vector 4: Module
-                                2
+                                2.
     128    0000A2                                            ; odswiezanie
-                                
+                                .
     129    0000A2 0412                 PUSH R4                           
   
     130    0000A4 0447                 MOV R7,R4             ; obsluga
-                                                              anod
+                                                              anod.
     131    0000A6                      
     132    0000A6 0493                 CMP #0000H,R4
     133    0000A8 0220                 JNE CHECK_6
@@ -215,36 +215,36 @@
     143    0000B8 C044....             MOV.B R4,P5OUT
     144    0000BC                      
     145    0000BC 0449                 MOV R9,R4             ; kopiuje minuty
-                                                              do R4 
+                                                              do R4 .
     146    0000BE 3FB2                 BIT #0008h, R15       ; sprawdza czy
                                                               godziny czy
                                                               minuty   
-                                                              
+                                                              .
     147    0000C0 0124                 JZ HOURS      
     148    0000C2 043C                 JMP WYSWIETL
     149    0000C4              HOURS:  
-    150    0000C4 34C0FF00             BIC #00FFH,R4         ; zeruj sekundy
-    151    0000C8 0458                 ADD R8,R4             ; dodaj godziny
+    150    0000C4 34C0FF00             BIC #00FFH,R4         ; zeruj sekundy.
+    151    0000C8 0458                 ADD R8,R4             ; dodaj godziny.
     152    0000CA 8410                 SWPB R4               ; zamien godziny z
-                                                              minutami
+                                                              minutami.
     153    0000CC              
     154    0000CC              WYSWIETL:               
     155    0000CC 0057                 ADD R7,PC             ; skok do obslugi
                                                               odpowiedniej
-                                                              cyfry
+                                                              cyfry.
     156    0000CE 033C                 JMP CYFRA1
     157    0000D0 053C                 JMP CYFRA2
     158    0000D2 0B3C                 JMP CYFRA3
     159    0000D4 0E3C                 JMP CYFRA4
     160    0000D6                      
-    161    0000D6 34F00F00     CYFRA1: AND #000FH,R4         ;and-wybranie
+    161    0000D6 34F00F00     CYFRA1: AND #000FH,R4         ; and-wybranie
                                                               odpowiedniej
-                                                              cyfry
+                                                              cyfry.
     162    0000DA 123C                 JMP RETURN1
     163    0000DC 34F0F000     CYFRA2: AND #00F0H,R4       
     164    0000E0 0411                 RRA R4                ; przesuniecie na
                                                               wlasciwe
-                                                              miejsce
+                                                              miejsce.
     165    0000E2 0411                 RRA R4
     166    0000E4 0411                 RRA R4
     167    0000E6 0411                 RRA R4
@@ -256,435 +256,435 @@
     173    0000F6 8410                 SWPB R4
     174    0000F8 0411                 RRA R4                ; przesuniecie na
                                                               wlasciwe
-                                                              miejsce
+                                                              miejsce.
     175    0000FA 0411                 RRA R4
     176    0000FC 0411                 RRA R4
     177    0000FE 0411                 RRA R4        
     178    000100              RETURN1:
     179    000100 34D0F000             BIS #00F0H, R4        ; ustawienie bitow
-                                                              sterujacych
+                                                              sterujacych.
     180    000104 2792                 CMP #0004H, R7
     181    000106 0720                 JNE CD
-    182    000108 3FB2                 BIT #0008H,R15        ; hh:mm?
+    182    000108 3FB2                 BIT #0008H,R15        ; hh:mm?.
     183    00010A 0520                 JNZ CD
     184    00010C 3FB01000             BIT #0010h, R15       ; bit sterujacy
                                                               wyswietlaniem
-                                                              kropki
+                                                              kropki.
     185    000110 0220                 JNZ CD
-    186    000112 34C08000             BIC #0080H,R4         ; nie wyswietlaj
-                                                              kropki w
-                                                              hh:mm
+    186    000112 34C08000             BIC #0080H,R4         ; wyswietlaj
+                                                              kropke w hh:mm co
+                                                              0,5s.
     187    000116              CD:
     188    000116 C044....             MOV.B R4,P6OUT
     189    00011A 2753                 ADD #0002H, R7
-    190    00011C 37F00700             AND #0007H,R7
-    191    000120                      
-    192    000120 3441                 POP R4
-    193    000122 B050A300....         ADD #163,TBCCR1       ; ustawienie
+    190    00011C 37F00700             AND #0007H, R7 
+    191    000120 3441                 POP R4
+    192    000122 B050A300....         ADD #163,TBCCR1       ; ustawienie
                                                               nowego punktu do
-                                                              liczenia
-    194    000128 B23F                 JMP timer_B_int       ; sprawdza czy nie
+                                                              liczenia.
+    193    000128 B23F                 JMP timer_B_int       ; sprawdza czy nie
                                                               ma innego
                                                               przerwania do
-                                                              
-    195    00012A                                            ; obsluzenia
-    196    00012A                                            
-    197    00012A              CCIFG_2_HND:                  ; Vector 2: Module
-                                1
-    198    00012A 0712                 PUSH R7               ; liczenie
-                                                              czasu
-    199    00012C 1953                 INC R9
-    200    00012E 09A3                 DADC R9
-    201    000130 3740FF00             MOV #0ffh,R7
-    202    000134 07F9                 AND R9,R7
-    203    000136 37906000             CMP #0060h,R7         ;sprawdza czy juz
-                                                              minelo 60s
-    204    00013A 1320                 JNE RETURN
-    205    00013C 39C0FF00             BIC #000ffh,R9
-    206    000140 39500001             ADD #0100h,R9
-    207    000144 09A3                 DADC R9
-    208    000146              Minuty:
-    209    000146 374000FF             MOV #0FF00h,R7
-    210    00014A 07F9                 AND R9,R7
-    211    00014C 37900060             CMP #6000h, R7        ; sprawdza czy juz
+                                                              .
+    194    00012A                                            ; obsluzenia.
+    195    00012A                                            
+    196    00012A              CCIFG_2_HND:                  ; Vector 2: Module
+                                1.
+    197    00012A 0712                 PUSH R7               ; liczenie
+                                                              czasu.
+    198    00012C 1953                 INC R9
+    199    00012E 09A3                 DADC R9
+    200    000130 3740FF00             MOV #0ffh,R7
+    201    000134 07F9                 AND R9,R7
+    202    000136 37906000             CMP #0060h,R7         ;sprawdza czy juz
+                                                              minelo 60s.
+    203    00013A 1320                 JNE RETURN
+    204    00013C 39C0FF00             BIC #000ffh,R9
+    205    000140 39500001             ADD #0100h,R9
+    206    000144 09A3                 DADC R9
+    207    000146              Minuty:
+    208    000146 374000FF             MOV #0FF00h,R7
+    209    00014A 07F9                 AND R9,R7
+    210    00014C 37900060             CMP #6000h, R7        ; sprawdza czy juz
                                                               minelo 60
-                                                              minut
-    212    000150 0820                 JNE RETURN
-    213    000152 39C000FF             BIC #0ff00h,R9
-    214    000156 1853                 INC R8
-    215    000158 08A3                 DADC R8
-    216    00015A 38902400             CMP #024h,R8
-    217    00015E 0120                 JNE RETURN
-    218    000160 0843                 MOV #00h,R8           ; przekrec licznik
-                                                              od poczatku
-    219    000162 B0500080.... RETURN: ADD #32768,TBCCR2     ; ustawienie
+                                                              minut.
+    211    000150 0820                 JNE RETURN
+    212    000152 39C000FF             BIC #0ff00h,R9
+    213    000156 1853                 INC R8
+    214    000158 08A3                 DADC R8
+    215    00015A 38902400             CMP #024h,R8
+    216    00015E 0120                 JNE RETURN
+    217    000160 0843                 MOV #00h,R8           ; przekrec licznik
+                                                              od poczatku.
+    218    000162 B0500080.... RETURN: ADD #32768,TBCCR2     ; ustawienie
                                                               nowego punktu do
-                                                              liczenia
-    220    000168 3741                 POP R7
-    221    00016A 913F                 JMP timer_B_int
-    222    00016C                      
-    223    00016C              CCIFG_3_HND:
-    224    00016C 3FB01000             BIT #0010h, R15       ; toggle bit
-                                                              4
-    225    000170 3FD01000             BIS #0010h, R15
-    226    000174 0224                 JZ ccifg3setok
-    227    000176 3FC01000             BIC #0010h, R15
-    228    00017A              ccifg3setok:
-    229    00017A B0500040....         ADD #16384, TBCCR3    ; przekrec licznik
-                                                              od poczatku
-    230    000180 863F                 JMP timer_B_int
-    231    000182                      
-    232    000182              default_int:
-    233    000182 F0C08000....         BIC.B #080h, P1OUT    ; zapala diode
-                                                              bledu
-    234    000188 0013                 RETI
-    235    00018A                      
-    236    00018A              init_registers:
-    237    00018A 0543                 CLR R5
-    238    00018C 0643                 CLR R6
-    239    00018E 0743                 CLR R7
-    240    000190 0843                 CLR R8                ; zerowanie
-                                                              godzin
-    241    000192 0943                 CLR R9                ; zerowanie sekund
-                                                              i minut
-    242    000194 0A43                 CLR R10
-    243    000196 0B43                 CLR R11
-    244    000198 0C43                 CLR R12
-    245    00019A 0D43                 CLR R13
-    246    00019C 0F43                 CLR R15
-    247    00019E B0D01000....         BIS #0010h, TBCCTL1   ; wlacz przerwania
-                                                              
-    248    0001A4 B0D01000....         BIS #0010h, TBCCTL2   ; wlacz przerwania
-                                                              
-    249    0001AA B0D01000....         BIS #0010h, TBCCTL3   ; wlacz przerwania
-                                                              
-    250    0001B0 B0D02001....         BIS #0120h, TBCTL     ; ustaw zegar
+                                                              liczenia.
+    219    000168 3741                 POP R7
+    220    00016A 913F                 JMP timer_B_int
+    221    00016C                      
+    222    00016C              CCIFG_3_HND:
+    223    00016C 3FB01000             BIT #0010h, R15       ; toggle bit
+                                                              4.
+    224    000170 3FD01000             BIS #0010h, R15
+    225    000174 0224                 JZ ccifg3setok
+    226    000176 3FC01000             BIC #0010h, R15
+    227    00017A              ccifg3setok:
+    228    00017A B0500040....         ADD #16384, TBCCR3    ; przekrec licznik
+                                                              od poczatku.
+    229    000180 863F                 JMP timer_B_int
+    230    000182                      
+    231    000182              default_int:
+    232    000182 F0C08000....         BIC.B #080h, P1OUT    ; zapala diode
+                                                              bledu.
+    233    000188 0013                 RETI
+    234    00018A                      
+    235    00018A              init_registers:
+    236    00018A 0543                 CLR R5
+    237    00018C 0643                 CLR R6
+    238    00018E 0743                 CLR R7
+    239    000190 0843                 CLR R8                ; zerowanie
+                                                              godzin.
+    240    000192 0943                 CLR R9                ; zerowanie sekund
+                                                              i minut.
+    241    000194 0A43                 CLR R10
+    242    000196 0B43                 CLR R11
+    243    000198 0C43                 CLR R12
+    244    00019A 0D43                 CLR R13
+    245    00019C 0F43                 CLR R15
+    246    00019E B0D01000....         BIS #0010h, TBCCTL1   ; wlacz przerwania
+                                                              .
+    247    0001A4 B0D01000....         BIS #0010h, TBCCTL2   ; wlacz przerwania
+                                                              .
+    248    0001AA B0D01000....         BIS #0010h, TBCCTL3   ; wlacz przerwania
+                                                              .
+    249    0001B0 B0D02001....         BIS #0120h, TBCTL     ; ustaw zegar
                                                               timera na
-                                                              ACLK
-    251    0001B6                                            ; wystartuj
-                                liczenie             
-    252    0001B6                                    
-    253    0001B6              app:        
-    254    0001B6                      ; R4  - rejestr obliczen tymczasowych
-    255    0001B6                      ; R5  - stan ukladu w kontekscie obslugi
-                                g0
-    256    0001B6                      ;       (na najmniej znaczacych 2och
-                                bitach)
-    257    0001B6                      ; R6  - stan ukladu w kontekscie obslugi
-                                g1
-    258    0001B6                      ;       (na najmniej znaczacych 2och
-                                bitach)
-    259    0001B6                      ; R8  - zegar 8 bit na godzine
-                                1-23
-    260    0001B6                      ; R9  - zegar 8 bit na sekundy + 8bit na
-                                minuty
-    261    0001B6                      ; R10 - g0::zliczanie cykli eliminacji
-                                drgan, max 32 (20h)
-    262    0001B6                      ; R11 - g0::zliczanie wartosci
-                                poszukiwanej w eliminacji drgan
-    263    0001B6                      ;       (ile razy pod rzad sie
-                                pojawila), max 4
-    264    0001B6                      ; R12 - g1::zliczanie cykli eliminacji
-                                drgan, j.w.
-    265    0001B6                      ; R13 - g1::zliczanie wartosci
-                                poszukiwanej w eliminacji drgan
-    266    0001B6                      ;       j.w.
-    267    0001B6                      ; R14 - rejestr obliczen tymczasowych
-                                
-    268    0001B6                      ;     
-    269    0001B6                      ; R15 - znaczniki uzywane przez
-                                przerwania i aplikacje
-    270    0001B6                      ;       b4: znacznik migania kropka
-                                wyswietlacza
-    271    0001B6                      ;       b3: 1 => wyswietlanie mm:ss
-    272    0001B6                      ;           0 => wyswietlanie hh:mm
-    273    0001B6                      ;       b2: nastapilo przerwanie timera
-                                A
-    274    0001B6                      ;       b1: wcisnieto g1
-    275    0001B6                      ;       b0: wcisnieto g0
+                                                              ACLK.
+    250    0001B6                                            ; wystartuj
+                                liczenie          .   
+    251    0001B6                                    
+    252    0001B6              app:        
+    253    0001B6                      ; R4  - rejestr obliczen tymczasowych.
+    254    0001B6                      ; R5  - stan ukladu w kontekscie obslugi
+                                g0.
+    255    0001B6                      ;       (na najmniej znaczacych 2och
+                                bitach).
+    256    0001B6                      ; R6  - stan ukladu w kontekscie obslugi
+                                g1.
+    257    0001B6                      ;       (na najmniej znaczacych 2och
+                                bitach).
+    258    0001B6                      ; R8  - zegar 8 bit na godzine
+                                1-23.
+    259    0001B6                      ; R9  - zegar 8 bit na sekundy + 8bit na
+                                minuty.
+    260    0001B6                      ; R10 - g0::zliczanie cykli eliminacji
+                                drgan, max 32 (20h).
+    261    0001B6                      ; R11 - g0::zliczanie wartosci
+                                poszukiwanej w eliminacji drgan.
+    262    0001B6                      ;       (ile razy pod rzad sie
+                                pojawila), max 4.
+    263    0001B6                      ; R12 - g1::zliczanie cykli eliminacji
+                                drgan, jw.
+    264    0001B6                      ; R13 - g1::zliczanie wartosci
+                                poszukiwanej w eliminacji drgan.
+    265    0001B6                      ;       jw.
+    266    0001B6                      ; R14 - rejestr obliczen tymczasowych
+                                .
+    267    0001B6                      ;     
+    268    0001B6                      ; R15 - znaczniki uzywane przez
+                                przerwania i aplikacje.
+    269    0001B6                      ;       b4: znacznik migania kropka
+                                wyswietlacza.
+    270    0001B6                      ;       b3: 1 => wyswietlanie mm:ss.
+    271    0001B6                      ;           0 => wyswietlanie hh:mm.
+    272    0001B6                      ;       b2: nastapilo przerwanie timera
+                                A.
+    273    0001B6                      ;       b1: wcisnieto g1.
+    274    0001B6                      ;       b0: wcisnieto g0.
+    275    0001B6                      
     276    0001B6                      
-    277    0001B6                      
-    278    0001B6                      ;----------- automat stanowy g0
-                                -----------
-    279    0001B6                      ; sprawdz w jakim stanie znajduje sie
-                                uklad
-    280    0001B6              check000:
-    281    0001B6 0593                 CMP #0000h, R5      ; stan 000
-    282    0001B8 0A20                 JNE check001
-    283    0001BA 1FB3                 BIT #0001h, R15     ; g0 ?
-    284    0001BC 5124                 JZ autom_g1
-    285    0001BE D0C3....             BIC.B #001h, P1IE   ; wylacz przerwanie
-                                                            g0
-    286    0001C2 1543                 MOV #0001h, R5      ; stan := 001
-                                                            
-    287    0001C4 B0D01000....         BIS #0010h, TACTL   ; Timer A start UP
-                                                            to TACCR0
-    288    0001CA 3040....             BR #autom_g1        ; przejdz do obslugi
-                                                            g1
-    289    0001CE                      
-    290    0001CE                      ;--------------- obsluga g0 ------------
-                               ---
-    291    0001CE              check001:
-    292    0001CE 1593                 CMP #0001h, R5      ; stan 001
-    293    0001D0 1F20                 JNE check011
-    294    0001D2 2FB2         do001:  BIT #0004h, R15     ; przerwanie
-                                                            timer_A
-    295    0001D4 4524                 JZ autom_g1
-    296    0001D6 1B53                 INC R11             ; licznik_zer++
-    297    0001D8 1A53                 INC R10             ; licznik_cykli++
-    298    0001DA D0B3....             BIT.B #001h, P1IN   ; g0 != 0 ?
-    299    0001DE 0124                 JZ noclr001
-    300    0001E0 0B43                 CLR R11                        
+    277    0001B6                      ;----------- automat stanowy g0
+                                -----------.
+    278    0001B6                      ; sprawdz w jakim stanie znajduje sie
+                                uklad.
+    279    0001B6              check000:
+    280    0001B6 0593                 CMP #0000h, R5      ; stan 000.
+    281    0001B8 0A20                 JNE check001
+    282    0001BA 1FB3                 BIT #0001h, R15     ; g0 ?.
+    283    0001BC 5124                 JZ autom_g1
+    284    0001BE D0C3....             BIC.B #001h, P1IE   ; wylacz przerwanie
+                                                            g0.
+    285    0001C2 1543                 MOV #0001h, R5      ; stan := 001
+                                                            .
+    286    0001C4 B0D01000....         BIS #0010h, TACTL   ; Timer A start UP
+                                                            to TACCR0.
+    287    0001CA 3040....             BR #autom_g1        ; przejdz do obslugi
+                                                            g1.
+    288    0001CE                      
+    289    0001CE                      ;--------------- obsluga g0 ------------
+                               ---.
+    290    0001CE              check001:
+    291    0001CE 1593                 CMP #0001h, R5      ; stan 001.
+    292    0001D0 1F20                 JNE check011
+    293    0001D2 2FB2         do001:  BIT #0004h, R15     ; przerwanie
+                                                            timer_A.
+    294    0001D4 4524                 JZ autom_g1
+    295    0001D6 1B53                 INC R11             ; licznik_zer++.
+    296    0001D8 1A53                 INC R10             ; licznik_cykli++.
+    297    0001DA D0B3....             BIT.B #001h, P1IN   ; g0 != 0 ?.
+    298    0001DE 0124                 JZ noclr001
+    299    0001E0 0B43                 CLR R11                        
                                                                         
-    301    0001E2              noclr001:
-    302    0001E2 2B92                 CMP #0004h, R11                
+    300    0001E2              noclr001:
+    301    0001E2 2B92                 CMP #0004h, R11                
                                                                         
-    303    0001E4 0A20                 JNE timeout001
-    304    0001E6                      ; eliminacja drgan zakonczona
-    305    0001E6 3FB2                 BIT #0008h, R15
-    306    0001E8 3FD2                 BIS #0008h, R15     ; ustaw mm:ss
-    307    0001EA 0124                 JZ mmssset001
-    308    0001EC 3FC2                 BIC #0008h, R15     ; ustaw hh:mm
-    309    0001EE              mmssset001:
-    310    0001EE 35400300             MOV #0003h, R5      ; stan := 011
-    311    0001F2 0B43                 CLR R11             ; czysc liczniki
+    302    0001E4 0A20                 JNE timeout001
+    303    0001E6                      ; eliminacja drgan zakonczona.
+    304    0001E6 3FB2                 BIT #0008h, R15
+    305    0001E8 3FD2                 BIS #0008h, R15     ; ustaw mm:ss.
+    306    0001EA 0124                 JZ mmssset001
+    307    0001EC 3FC2                 BIC #0008h, R15     ; ustaw hh:mm.
+    308    0001EE              mmssset001:
+    309    0001EE 35400300             MOV #0003h, R5      ; stan := 011.
+    310    0001F2 0B43                 CLR R11             ; czysc liczniki
                                                             eliminacji
-                                                            drgan
-    312    0001F4 0A43                 CLR R10
-    313    0001F6 3040....             BR #autom_g1
-    314    0001FA              timeout001:
-    315    0001FA 3A902000             CMP #0020h, R10
-    316    0001FE 3020                 JNE autom_g1
-    317    000200 0543                 MOV #0000h, R5      ; stan := 000
-    318    000202 0B43                 CLR R11             ; czysc liczniki
+                                                            drgan.
+    311    0001F4 0A43                 CLR R10
+    312    0001F6 3040....             BR #autom_g1
+    313    0001FA              timeout001:
+    314    0001FA 3A902000             CMP #0020h, R10
+    315    0001FE 3020                 JNE autom_g1
+    316    000200 0543                 MOV #0000h, R5      ; stan := 000.
+    317    000202 0B43                 CLR R11             ; czysc liczniki
                                                             eliminacji
-                                                            drgan
-    319    000204 0A43                 CLR R10
-    320    000206 1FC3                 BIC #0001h, R15     ; czysc informacje o
-                                                            obsludze g0
-    321    000208 D0D3....             BIS.B #001h, P1IE   ; wlacz przerwanie
-                                                            g0
-    322    00020C 3040....             BR #autom_g1
-    323    000210                      
-    324    000210              check011:
-    325    000210 35900300             CMP #0003h, R5      ; stan 011
-    326    000214 0820                 JNE check010
-    327    000216 2FB2                 BIT #0004h, R15     ; przerwanie
-                                                            timer_A
-    328    000218 2324                 JZ autom_g1
-    329    00021A D0B3....             BIT.B #001h, P1IN   ; g0 != 0 ?
-    330    00021E 2024                 JZ autom_g1
-    331    000220 2543                 MOV #0002h, R5      ; stan := 010
-    332    000222 3040....             BR #autom_g1
-    333    000226                      
-    334    000226              check010: 
-    335    000226                      ;CMP #0002h, R5     ; stan 010, nie
-                                musimy sprawdzac
-    336    000226                      ;JNE check101
-    337    000226 2FB2                 BIT #0004h, R15     ; przerwanie
-                                                            timer_A
-    338    000228 1B24                 JZ autom_g1
-    339    00022A 1B53                 INC R11             ; licznik_zer++
-    340    00022C 1A53                 INC R10             ; licznik_cykli++
-    341    00022E D0B3....             BIT.B #001h, P1IN   ; g0 != 0 ?
-    342    000232 0120                 JNZ noclr010
-    343    000234 0B43                 CLR R11        
-    344    000236              noclr010:
-    345    000236 2B92                 CMP #0004h, R11                
+                                                            drgan.
+    318    000204 0A43                 CLR R10
+    319    000206 1FC3                 BIC #0001h, R15     ; czysc informacje o
+                                                            obsludze g0.
+    320    000208 D0D3....             BIS.B #001h, P1IE   ; wlacz przerwanie
+                                                            g0.
+    321    00020C 3040....             BR #autom_g1
+    322    000210                      
+    323    000210              check011:
+    324    000210 35900300             CMP #0003h, R5      ; stan 011.
+    325    000214 0820                 JNE check010
+    326    000216 2FB2                 BIT #0004h, R15     ; przerwanie
+                                                            timer_A.
+    327    000218 2324                 JZ autom_g1
+    328    00021A D0B3....             BIT.B #001h, P1IN   ; g0 != 0 ?.
+    329    00021E 2024                 JZ autom_g1
+    330    000220 2543                 MOV #0002h, R5      ; stan := 010.
+    331    000222 3040....             BR #autom_g1
+    332    000226                      
+    333    000226              check010: 
+    334    000226                      ;CMP #0002h, R5 .    ; stan 010, nie
+                                musimy sprawdzac.
+    335    000226 2FB2                 BIT #0004h, R15     ; przerwanie
+                                                            timer_A.
+    336    000228 1B24                 JZ autom_g1
+    337    00022A 1B53                 INC R11             ; licznik_zer++.
+    338    00022C 1A53                 INC R10             ; licznik_cykli++.
+    339    00022E D0B3....             BIT.B #001h, P1IN   ; g0 != 0 ?.
+    340    000232 0120                 JNZ noclr010
+    341    000234 0B43                 CLR R11        
+    342    000236              noclr010:
+    343    000236 2B92                 CMP #0004h, R11                
                                                                         
-    346    000238 0A20                 JNE timeout010
-    347    00023A                      ; eliminacja drgan zakonczona
-    348    00023A 0543                 MOV #0000h, R5      ; stan := 000
-    349    00023C 0B43                 CLR R11             ; czysc liczniki
+    344    000238 0A20                 JNE timeout010
+    345    00023A                      ; eliminacja drgan zakonczona.
+    346    00023A 0543                 MOV #0000h, R5      ; stan := 000.
+    347    00023C 0B43                 CLR R11             ; czysc liczniki
                                                             eliminacji
-                                                            drgan
-    350    00023E 0A43                 CLR R10
-    351    000240 1FC3                 BIC #0001h, R15     ; czysc informacje o
-                                                            obsludze g0
-    352    000242 D0C3....             BIC.B #001h, P1IFG  ; czysc informacje o
+                                                            drgan.
+    348    00023E 0A43                 CLR R10
+    349    000240 1FC3                 BIC #0001h, R15     ; czysc informacje o
+                                                            obsludze g0.
+    350    000242 D0C3....             BIC.B #001h, P1IFG  ; czysc informacje o
                                                             przerwaniach
-                                                            g0
-    353    000246 D0D3....             BIS.B #001h, P1IE   ; wlacz przerwania
-                                                            g0
-    354    00024A 3040....             BR #autom_g1
-    355    00024E              timeout010:
-    356    00024E 3A902000             CMP #0020h, R10
-    357    000252 0620                 JNE autom_g1
-    358    000254 35400300             MOV #0003h, R5      ; stan := 011
-    359    000258 0B43                 CLR R11             ; czysc liczniki
+                                                            g0.
+    351    000246 D0D3....             BIS.B #001h, P1IE   ; wlacz przerwania
+                                                            g0.
+    352    00024A 3040....             BR #autom_g1
+    353    00024E              timeout010:
+    354    00024E 3A902000             CMP #0020h, R10
+    355    000252 0620                 JNE autom_g1
+    356    000254 35400300             MOV #0003h, R5      ; stan := 011.
+    357    000258 0B43                 CLR R11             ; czysc liczniki
                                                             eliminacji
-                                                            drgan
-    360    00025A 0A43                 CLR R10
-    361    00025C 3040....             BR #autom_g1
-    362    000260                      
-    363    000260              autom_g1:
-    364    000260                      ;----------- automat stanowy g1
-                                -----------
-    365    000260 0693                 CMP #0000h, R6      ; stan 100 (dla
-                                                            porzadku 000h)
-    366    000262 0B20                 JNE check101
-    367    000264 2FB3                 BIT #0002h, R15     ; g1 ?
-    368    000266 7924                 JZ sleep
-    369    000268 E0C3....             BIC.B #002h, P1IE   ; wylacz przerwanie
-                                                            g1
-    370    00026C 36400500             MOV #0005h, R6      ; stan := 101
-    371    000270 B0D01000....         BIS #0010h, TACTL   ; Timer A start UP
-                                                            to TACCR0
-    372    000276 3040....             BR #sleep
-    373    00027A                      
-    374    00027A                      ;--------------- obsluga g1 ------------
-                               ---
-    375    00027A              check101:        
-    376    00027A 36900500             CMP #0005h, R6      ; stan 101
-    377    00027E 4420                 JNE check111
-    378    000280 2FB2                 BIT #0004h, R15     ; przerwanie
-                                                            timer_A
-    379    000282 6B24                 JZ sleep
-    380    000284 1D53                 INC R13             ; licznik_zer++
-    381    000286 1C53                 INC R12             ; licznik_cykli++
-    382    000288 E0B3....             BIT.B #002h, P1IN   ; g1 != 0 ?
-    383    00028C 0124                 JZ noclr101
-    384    00028E 0D43                 CLR R13        
-    385    000290              noclr101:
-    386    000290 2D92                 CMP #0004h, R13                
+                                                            drgan.
+    358    00025A 0A43                 CLR R10
+    359    00025C 3040....             BR #autom_g1
+    360    000260                      
+    361    000260              autom_g1:
+    362    000260                      ;----------- automat stanowy g1
+                                -----------.
+    363    000260 0693                 CMP #0000h, R6      ; stan 100 (dla
+                                                            porzadku 000h).
+    364    000262 0B20                 JNE check101
+    365    000264 2FB3                 BIT #0002h, R15     ; g1 ?.
+    366    000266 7A24                 JZ sleep
+    367    000268 E0C3....             BIC.B #002h, P1IE   ; wylacz przerwanie
+                                                            g1.
+    368    00026C 36400500             MOV #0005h, R6      ; stan := 101.
+    369    000270 B0D01000....         BIS #0010h, TACTL   ; Timer A start UP
+                                                            to TACCR0.
+    370    000276 3040....             BR #sleep
+    371    00027A                      
+    372    00027A                      ;--------------- obsluga g1 ------------
+                               ---.
+    373    00027A              check101:        
+    374    00027A 36900500             CMP #0005h, R6      ; stan 101.
+    375    00027E 4520                 JNE check111
+    376    000280 2FB2                 BIT #0004h, R15     ; przerwanie
+                                                            timer_A.
+    377    000282 6C24                 JZ sleep
+    378    000284 1D53                 INC R13             ; licznik_zer++.
+    379    000286 1C53                 INC R12             ; licznik_cykli++.
+    380    000288 E0B3....             BIT.B #002h, P1IN   ; g1 != 0 ?.
+    381    00028C 0124                 JZ noclr101
+    382    00028E 0D43                 CLR R13        
+    383    000290              noclr101:
+    384    000290 2D92                 CMP #0004h, R13                
                                                                         
-    387    000292 2D20                 JNE timeout101
-    388    000294                      
-    389    000294 0443                 CLR R4
-    390    000296 5440....             MOV.B P4IN, R4      ; laduj mm do
-                                                            R4
-    391    00029A 04A3                 DADC R4
-    392    00029C 34906000             CMP #0060h, R4
-    393    0002A0 0238                 JL nommchange101
-    394    0002A2 34405900             MOV #0059h, R4
-    395    0002A6              nommchange101:
-    396    0002A6 8410                 SWPB R4             ; [00mm] ->
-                                                            [mm00]
-    397    0002A8                      
-    398    0002A8 0E43                 CLR R14
-    399    0002AA 5E40....             MOV.B P3IN, R14     ; laduj hh do
-                                                            R14
-    400    0002AE 0EA3                 DADC R14
-    401    0002B0 3E902400             CMP #0024h, R14
-    402    0002B4 0238                 JL nohhchange101
-    403    0002B6 3E402300             MOV #0023h, R14        ; R14 =
-                                                               [00hh]
-    404    0002BA              nohhchange101:
-    405    0002BA              
-    406    0002BA B0C01100....         BIC #0011h, TBCCTL2 ; wylacz przerwania
+    385    000292 2E20                 JNE timeout101
+    386    000294                      
+    387    000294 0443                 CLR R4
+    388    000296 5440....             MOV.B P4IN, R4      ; laduj mm do
+                                                            R4.
+    389    00029A 12C3                 CLRC
+    390    00029C 04A3                 DADC R4
+    391    00029E 34906000             CMP #0060h, R4
+    392    0002A2 0238                 JL nommchange101
+    393    0002A4 34405900             MOV #0059h, R4
+    394    0002A8              nommchange101:
+    395    0002A8 8410                 SWPB R4             ; [00mm] ->
+                                                            [mm00].
+    396    0002AA                      
+    397    0002AA 0E43                 CLR R14
+    398    0002AC 5E40....             MOV.B P3IN, R14     ; laduj hh do
+                                                            R14.
+    399    0002B0 0EA3                 DADC R14
+    400    0002B2 3E902400             CMP #0024h, R14
+    401    0002B6 0238                 JL nohhchange101
+    402    0002B8 3E402300             MOV #0023h, R14        ; R14 =
+                                                               [00hh].
+    403    0002BC              nohhchange101:
+    404    0002BC              
+    405    0002BC B0C01100....         BIC #0011h, TBCCTL2 ; wylacz przerwania
                                                             zliczania
-                                                            zegara
-    407    0002C0 B0C03000....         BIC #0030h, TBCTL   ; zastopuj
-                                                            timerB
-    408    0002C6 084E                 MOV R14, R8         ; ustaw hh
-    409    0002C8 0944                 MOV R4, R9          ; ustaw mmss
-    410    0002CA 1440....             MOV TBR, R4
-    411    0002CE 34500080             ADD #32768, R4
-    412    0002D2 8044....             MOV R4, TBCCR2      ; zapewnij, ze
+                                                            zegara.
+    406    0002C2 B0C03000....         BIC #0030h, TBCTL   ; zastopuj
+                                                            timerB.
+    407    0002C8 084E                 MOV R14, R8         ; ustaw hh.
+    408    0002CA 0944                 MOV R4, R9          ; ustaw mmss.
+    409    0002CC 1440....             MOV TBR, R4
+    410    0002D0 34500080             ADD #32768, R4
+    411    0002D4 8044....             MOV R4, TBCCR2      ; zapewnij, ze
                                                             odliczy sie pelna
-                                                            sek
-    413    0002D6 B0D02000....         BIS #0020h, TBCTL   ; wlacz timerB
-    414    0002DC B0D01000....         BIS #0010h, TBCCTL2 ; wlacz przerwania
+                                                            sek.
+    412    0002D8 B0D02000....         BIS #0020h, TBCTL   ; wlacz timerB.
+    413    0002DE B0D01000....         BIS #0010h, TBCCTL2 ; wlacz przerwania
                                                             zliczania
-                                                            zegara
-    415    0002E2              
-    416    0002E2 36400700             MOV #0007h, R6      ; stan := 111
-    417    0002E6 0D43                 CLR R13             ; czysc liczniki
+                                                            zegara.
+    414    0002E4              
+    415    0002E4 36400700             MOV #0007h, R6      ; stan := 111.
+    416    0002E8 0D43                 CLR R13             ; czysc liczniki
                                                             eliminacji
-                                                            drgan
-    418    0002E8 0C43                 CLR R12
-    419    0002EA 3040....             BR #sleep
-    420    0002EE              timeout101:
-    421    0002EE 3C902000             CMP #0020h, R12
-    422    0002F2 3320                 JNE sleep
-    423    0002F4 0643                 MOV #0000h, R6      ; stan := 100
-    424    0002F6 0D43                 CLR R13             ; czysc liczniki
+                                                            drgan.
+    417    0002EA 0C43                 CLR R12
+    418    0002EC 3040....             BR #sleep
+    419    0002F0              timeout101:
+    420    0002F0 3C902000             CMP #0020h, R12
+    421    0002F4 3320                 JNE sleep
+    422    0002F6 0643                 MOV #0000h, R6      ; stan := 100.
+    423    0002F8 0D43                 CLR R13             ; czysc liczniki
                                                             eliminacji
-                                                            drgan
-    425    0002F8 0C43                 CLR R12
-    426    0002FA 2FC3                 BIC #0002h, R15     ; czysc informacje o
-                                                            obsludze g1
-    427    0002FC E0C3....             BIC.B #002h, P1IFG  ; czysc informacje o
+                                                            drgan.
+    424    0002FA 0C43                 CLR R12
+    425    0002FC 2FC3                 BIC #0002h, R15     ; czysc informacje o
+                                                            obsludze g1.
+    426    0002FE E0C3....             BIC.B #002h, P1IFG  ; czysc informacje o
                                                             przerwaniu
-                                                            g1
-    428    000300 E0D3....             BIS.B #002h, P1IE   ; wlacz przerwania
-                                                            g1
-    429    000304 3040....             BR #sleep
-    430    000308              
-    431    000308              check111:
-    432    000308 36900700             CMP #0007h, R6      ; stan 111
-    433    00030C 0920                 JNE check110
-    434    00030E 2FB2                 BIT #0004h, R15     ; przerwanie
-                                                            timer_A
-    435    000310 2424                 JZ sleep
-    436    000312 E0B3....             BIT.B #002h, P1IN   ; g1 != 0 ?
-    437    000316 2124                 JZ sleep
-    438    000318 36400600             MOV #0006h, R6      ; stan := 110
-    439    00031C 3040....             BR #sleep
-    440    000320              
-    441    000320              check110: 
-    442    000320                      ;CMP #0006h, R6     ; stan 110, nie
-                                musimy sprawdzac
-    443    000320 2FB2                 BIT #0004h, R15     ; przerwanie
-                                                            timer_A
-    444    000322 1B24                 JZ sleep
-    445    000324 1D53                 INC R13             ; licznik_zer++
-    446    000326 1C53                 INC R12             ; licznik_cykli++
-    447    000328 E0B3....             BIT.B #002h, P1IN   ; g1 != 0 ?
-    448    00032C 0120                 JNZ noclr110
-    449    00032E 0D43                 CLR R13        
-    450    000330              noclr110:
-    451    000330 2D92                 CMP #0004h, R13                
+                                                            g1.
+    427    000302 E0D3....             BIS.B #002h, P1IE   ; wlacz przerwania
+                                                            g1.
+    428    000306 3040....             BR #sleep
+    429    00030A              
+    430    00030A              check111:
+    431    00030A 36900700             CMP #0007h, R6      ; stan 111.
+    432    00030E 0920                 JNE check110
+    433    000310 2FB2                 BIT #0004h, R15     ; przerwanie
+                                                            timer_A.
+    434    000312 2424                 JZ sleep
+    435    000314 E0B3....             BIT.B #002h, P1IN   ; g1 != 0 ?.
+    436    000318 2124                 JZ sleep
+    437    00031A 36400600             MOV #0006h, R6      ; stan := 110.
+    438    00031E 3040....             BR #sleep
+    439    000322              
+    440    000322              check110: 
+    441    000322                      ;CMP #0006h, R6 .    ; stan 110, nie
+                                musimy sprawdzac.
+    442    000322 2FB2                 BIT #0004h, R15     ; przerwanie
+                                                            timer_A.
+    443    000324 1B24                 JZ sleep
+    444    000326 1D53                 INC R13             ; licznik_zer++.
+    445    000328 1C53                 INC R12             ; licznik_cykli++.
+    446    00032A E0B3....             BIT.B #002h, P1IN   ; g1 != 0 ?.
+    447    00032E 0120                 JNZ noclr110
+    448    000330 0D43                 CLR R13        
+    449    000332              noclr110:
+    450    000332 2D92                 CMP #0004h, R13                
                                                                         
-    452    000332 0A20                 JNE timeout110
-    453    000334                      ; eliminacja drgan zakonczona
-    454    000334 0643                 MOV #0000h, R6      ; stan := 000
-    455    000336 0D43                 CLR R13             ; czysc liczniki
+    451    000334 0A20                 JNE timeout110
+    452    000336                      ; eliminacja drgan zakonczona.
+    453    000336 0643                 MOV #0000h, R6      ; stan := 000.
+    454    000338 0D43                 CLR R13             ; czysc liczniki
                                                             eliminacji
-                                                            drgan
-    456    000338 0C43                 CLR R12
-    457    00033A 2FC3                 BIC #0002h, R15     ; czysc informacje o
-                                                            obsludze g1
-    458    00033C E0C3....             BIC.B #002h, P1IFG  ; czysc informacje o
+                                                            drgan.
+    455    00033A 0C43                 CLR R12
+    456    00033C 2FC3                 BIC #0002h, R15     ; czysc informacje o
+                                                            obsludze g1.
+    457    00033E E0C3....             BIC.B #002h, P1IFG  ; czysc informacje o
                                                             przerwaniu
-                                                            g1
-    459    000340 E0D3....             BIS.B #002h, P1IE   ; wlacz przerwanie
-                                                            g1
-    460    000344 3040....             BR #sleep
-    461    000348              timeout110:
-    462    000348 3C902000             CMP #0020h, R12
-    463    00034C 0620                 JNE sleep
-    464    00034E 36400700             MOV #0007h, R6      ; stan := 111
-    465    000352 0D43                 CLR R13             ; czysc liczniki
+                                                            g1.
+    458    000342 E0D3....             BIS.B #002h, P1IE   ; wlacz przerwanie
+                                                            g1.
+    459    000346 3040....             BR #sleep
+    460    00034A              timeout110:
+    461    00034A 3C902000             CMP #0020h, R12
+    462    00034E 0620                 JNE sleep
+    463    000350 36400700             MOV #0007h, R6      ; stan := 111.
+    464    000354 0D43                 CLR R13             ; czysc liczniki
                                                             eliminacji
-                                                            drgan
-    466    000354 0C43                 CLR R12
-    467    000356 3040....             BR #sleep
-    468    00035A                     
-    469    00035A              sleep:
-    470    00035A 2FC2                 BIC #0004h, R15     ; wyczyszczenie info
-                                                            o przerwaniu
-    471    00035C                                          ;  timerA jesli
-                                bylo
-    472    00035C 3FB00300             BIT #0003h, R15     ; czy trwa obsluga
-                                                            g0 lub g1?
-    473    000360 0320                 JNZ enter_lpm       ; jesli tak, to
-                                                            spij
-    474    000362 B0C01000....         BIC #0010h, TACTL   ; Timer A stop UP to
-                                                            TACCR0
-    475    000368               
-    476    000368              enter_lpm:        
-    477    000368 32D01800             BIS #GIE+CPUOFF, SR ; przejscie do
-                                                            LPM1
-    478    00036C 3040....             BR #app             ; skok na poczatek
+                                                            drgan.
+    465    000356 0C43                 CLR R12
+    466    000358 3040....             BR #sleep
+    467    00035C                     
+    468    00035C              sleep:
+    469    00035C 2FC2                 BIC #0004h, R15     ; wyczyszczenie info
+                                                            o przerwaniu.
+    470    00035E                                          ;  timerA jesli
+                                bylo.
+    471    00035E 3FB00300             BIT #0003h, R15     ; czy trwa obsluga
+                                                            g0 lub g1?.
+    472    000362 0320                 JNZ enter_lpm       ; jesli tak, to
+                                                            spij.
+    473    000364 B0C01000....         BIC #0010h, TACTL   ; Timer A stop UP to
+                                                            TACCR0.
+    474    00036A               
+    475    00036A              enter_lpm:        
+    476    00036A 32D01800             BIS #GIE+CPUOFF, SR ; przejscie do
+                                                            LPM1.
+    477    00036E 3040....             BR #app             ; skok na poczatek
                                                             czesci aplikacyjnej
-    479    000370              
-    480    000370                      END
+                                                           .
+    478    000372              
+    479    000372                      END
 ##############################
-#          CRC:A551          #
+#          CRC:A714          #
 #        Errors:   0         #
 #        Warnings: 0         #
-#         Bytes: 912         #
+#         Bytes: 914         #
 ##############################
 
 
