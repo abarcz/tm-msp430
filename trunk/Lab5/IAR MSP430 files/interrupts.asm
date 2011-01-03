@@ -22,6 +22,7 @@ interrupts
 default_int:
         BIC.B #080h, P1OUT            ; zapala diode bledu.
         RETI
+        
 transmit_usart:
         CMP #0000h,g_t_chars_to_send  ; czy wszystko wyslano
         JEQ end_transmision
@@ -31,6 +32,7 @@ transmit_usart:
         RETI
 end_transmision:
         BIS #0010h, g_flags           ; powiadom ze chcemy kolejny teks do wyslania
+        PUSH R6
         MOV 2(SP), R6
         BIC #CPUOFF, R6               ; zmodyfikuj lezace na stosie SR.
         MOV R6, 2(SP)                 ; aby obudzic procesor.
@@ -43,14 +45,15 @@ receive_usart:
         BIT #0001h, g_flags           ; czy zdarzylismy odebrac
         JZ recive_next
         BIS #0002h,g_flags            ; powiadom o bledzie
-
 recive_next:
         BIS #0001h,g_flags            ; powiadom ze odebralismy
+        PUSH R6
         MOV 2(SP), R6
         BIC #CPUOFF, R6               ; zmodyfikuj lezace na stosie SR.
         MOV R6, 2(SP)                 ; aby obudzic procesor.
         POP R6
         RETI
+        
 timer_A_int:
         BIS #0020h, g_flags
         PUSH R6
