@@ -39,12 +39,12 @@ end_transmision:
         
         
 receive_usart:
+        MOV.B &U0RXBUF,g_r_char       ; czy to dobrze?
         BIT #0001h, g_flags           ; czy zdarzylismy odebrac
         JZ recive_next
-        ; TODO jakis error
-        RETI  
+        BIS #0002h,g_flags            ; powiadom o bledzie
+
 recive_next:
-        MOV.B &U0RXBUF,g_r_char       ; czy to dobrze?
         BIS #0001h,g_flags            ; powiadom ze odebralismy
         MOV 2(SP), R6
         BIC #CPUOFF, R6               ; zmodyfikuj lezace na stosie SR.
