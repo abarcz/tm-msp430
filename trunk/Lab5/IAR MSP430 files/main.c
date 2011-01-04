@@ -3,12 +3,14 @@
 #include "intrinsics.h"
 #include "string.h"         // memset
 
-#define BAUDRATE 38400      // baud. zejscie ponizej 31250 wymusza
+#define BAUDRATE 115200      // baud. zejscie ponizej 31250 wymusza
                             // wyliczanie U0BR1
 
 #define ACLK_FQ 8000000     // Hz
-#define BUF_SIZE 256        // rozmiar bufora
+#define BUF_SIZE 32         // rozmiar bufora
 
+//timeout odbioru danych, pozwala stwierdzic koniec odbioru
+const int receive_timeout = ACLK_FQ / BAUDRATE * 10;
 char g_r_char = '0';        // bufor receive do przekazywania pojedynczego znaku
 char *g_t_curr_char = NULL; // wskaznik nastepnego znaku do wyslania przez trans
 int g_t_chars_to_send = 0;  // ilosc znakow pozostala do wyslania przez trans
@@ -24,8 +26,6 @@ int g_flags = 0;
 
 int main( void )
 {
-  //timeout odbioru danych, pozwala stwierdzic koniec odbioru
-  const int receive_timeout = ACLK_FQ / BAUDRATE * 4;
   
   // bufory I/O
   char buffer[BUF_SIZE];
@@ -36,24 +36,29 @@ int main( void )
   int transmit_on = 0;
   int ready_to_transmit = 0;    // istnieja dane gotowe do przeslania
   
-  // wyzerowanie bufora I/O
-  memset(buffer, 0, BUF_SIZE);
-  
   // Stop watchdog timer to prevent time out reset.
   WDTCTL = WDTPW + WDTHOLD;
+  
+  // wyzerowanie bufora I/O
+  memset(buffer, 0, BUF_SIZE);
+  BCSCTL1 &= !BIT0;               // wlaczenie XT2
+  BCSCTL1 |= RSEL0 + RSEL1 + RSEL2;
   
   /*
   Przygotowanie zegarów.
   */
-  BCSCTL1 |= XTS;               // prze³¹czenie LFXT1 na HF (ACLK)
-  BCSCTL2 |= SELM1;             // MCLK = present(XT2) ? XT2 : LFXT1;
-
+  //BCSCTL1 |= XTS;               // prze³¹czenie LFXT1 na HF (ACLK)
+  //BCSCTL2 |= SELM1;             // MCLK = present(XT2) ? XT2 : LFXT1;
+   
+  BCSCTL2 |= SELS;                // SMCLK = XT2 jesli obecny
+  
   /*
   Ustawienie portów:
   P1.7 - dioda b³êdu
   P3.4 - UTXD0
   P3.5 - URXD0
   */  
+  P1OUT &= !BIT7;               // zgaszenie diody bledu 
   P1DIR |= BIT7;                // ustaw bit7 jako wyjsciowy
   P3SEL |= BIT4 + BIT5;         // ustaw piny do obslugi RS232
   P3DIR |= BIT4;        // ustaw pin 4 jako wyjscie :TODO: nie wiem czy potrzebne
@@ -62,14 +67,16 @@ int main( void )
   Przygotowanie timera A.
   Timer A slu¿y do wykrycia idle line po zakoñczeniu odbioru znaków z URXD.
   */
-  TACTL |= TASSEL_1 + TAIE;     // wybranie ACLK, w³ przerwania TAIFG
-  TACCR1 = receive_timeout; 
+  TACTL |= 0x0200; //+ TAIE;     // wybranie SMCLK, w³ przerwania TAIFG
+  TACCR0 = receive_timeout; 
   
   /*
   Przygotowanie USART w trybie UART
   */
   U0CTL |= SWRST;
-  U0TCTL |= SSEL0;              // wybranie ACLK
+  U0CTL |= PENA  + PEV + SPB;         // 8bit + parzystosc (odd)
+  U0TCTL |= SSEL1;              // wybranie SMCLK
+  U0RCTL |= URXEIE;
   //:TODO: ewentualne budzenie procesora na rising edge receive
   // ale nie potrzebujemy tego koniecznie, jesli nie wylaczymy zegara
   U0BR0 = ACLK_FQ / BAUDRATE;   // tylko jesli baudrate > 312500!
@@ -80,8 +87,11 @@ int main( void )
   // ew. dalsza czesc inicjalizacji tutaj
   
   U0CTL &= !SWRST;              // wyzerowanie SWRST
-  IE1 = URXIE0;                 // wlacz przerwania receive
-  
+  IE1 |= URXIE0;                 // wlacz przerwania receive
+  //IFG1 = 0xFF;
+  //TACCTL0 |= CCIE;      // wlacz przerwania
+  //TACTL |= MC_2;        // continous mode on
+
   /***************** czêœæ aplikacyjna *****************/
   while(1)
   {
@@ -95,29 +105,30 @@ int main( void )
     {
       i_char = g_r_char;        // przepisanie znaku do bufora ap
       g_flags &= !BIT0;         // wyczyszczenie znacznika oczekujacej danej
-      r_buf_pos++;
+      //r_buf_pos++;
       // jesli aplikacja nie nadaza z odbieraniem danych od przerwania, blad
       if (g_flags & BIT1)
         goto error;
       
-      TACTL &= !(MC_0 + MC_1);  // wylacz timerA
-      TACCR1 = TAR + receive_timeout; // zapewnij przerwanie po rec_timeout
+      TACTL &= 0xFFCF;           // wylacz timerA
+      TACCR0 = TAR + receive_timeout; // zapewnij przerwanie po rec_timeout
       
       if (transmit_on == 1)     // nie mo¿e jednoczeœnie odbieraæ i wysy³aæ
         goto error;
       if (receive_on == 0)      // jest to poczatek odbierania
       { 
         receive_on = 1;
-        // poniewaz odebrano bit adresu, nie rob nic wiecej
+        TACCR0 = receive_timeout; // zresetuj timer
+        TAR = 0;
         TACCTL0 |= CCIE;        // wlacz przerwania
-        TACTL |= MC_1;          // continous mode on
+        TACTL |= MC_2;          // continous mode on
       }
-      else
-      {
+      //else
+      //{
         if (i_char == 10) //10 = LF 13 = CR koniec odbioru
         {
           receive_on = 0;       // koniec odbierania
-          TACCR1 = receive_timeout; // zresetuj timer
+          TACCR0 = receive_timeout; // zresetuj timer
           TAR = 0;
           ready_to_transmit = 1;
         }
@@ -130,15 +141,15 @@ int main( void )
           buffer[r_buf_pos] = i_char;
           r_buf_pos--;
           TACCTL0 |= CCIE;      // wlacz przerwania
-          TACTL |= MC_1;        // continous mode on
+          TACTL |= MC_2;        // continous mode on
         }
-      }
+      //}
     }
     else if (g_flags & BIT5)    // timerA zglosil timeout, a receive milczy
     {
       receive_on = 0;           // koniec odbierania
-      TACTL &= !(MC_0 + MC_1);  // wylacz i zresetuj timerA
-      TACCR1 = receive_timeout;
+      TACTL &= 0xFFCF;           // wylacz i zresetuj timerA
+      TACCR0 = receive_timeout;
       TAR = 0;
       
       g_flags &= !BIT5;
@@ -163,7 +174,9 @@ int main( void )
     {
       transmit_on = 0;
       g_flags &= !BIT4;
-      IE1 &= !UTXIE0;           // wylacz przerwania transmit
+      r_buf_pos = BUF_SIZE - 1;
+      IE1 &= 0x7F;           // wylacz przerwania transmit
+      //IE1
       IFG1 |= UTXIFG0;          // zapewnij zgloszenie sie transmit po 
                                 // odblokowaniu przerwania
     }
