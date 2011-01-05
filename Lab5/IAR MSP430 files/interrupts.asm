@@ -3,11 +3,11 @@ NAME INTERRUPTS
 
 PUBLIC interrupts             ; Declare symbol to be exported.
 
-EXTERN g_r_char               ; bufor receive do przekazywania pojedynczego znaku
-EXTERN g_t_curr_char          ; wskaznik nastepnego znaku do wyslania przez trans
-EXTERN g_t_chars_to_send      ; int ilosc znakow pozostala do wyslania przez trans
-EXTERN g_flags                ; int flagi 
-EXTERN receive_timeout        ; czas o jaki trzeba przesunac timer A
+EXTERN g_r_char               ; bufor receive do przekazywania pojedynczego znaku.
+EXTERN g_t_curr_char          ; wskaznik nastepnego znaku do wyslania przez trans.
+EXTERN g_t_chars_to_send      ; int ilosc znakow pozostala do wyslania przez trans.
+EXTERN g_flags                ; int flagi.
+EXTERN receive_timeout        ; czas o jaki trzeba przesunac timer A.
 RSEG CODE                     ; Code is relocatable.
 
 /* znaczniki przekazywane miedzy ISR a petla glowna
@@ -26,17 +26,16 @@ default_int:
         
 transmit_usart:
         PUSH R6
-        CMP #0000h,g_t_chars_to_send  ; czy wszystko wyslano
+        CMP #0000h,g_t_chars_to_send  ; czy wszystko wyslano.
         JEQ end_transmision
-        DEC g_t_chars_to_send
         MOV g_t_curr_char,R6
-        MOV.B @R6, U0TXBUF ; czy dobrze to dziala??
-        ADD #0001h,g_t_curr_char      ; skok do nastepnego znaku
+        MOV.B @R6, U0TXBUF
+        DEC g_t_chars_to_send
+        ADD #0001h,g_t_curr_char      ; skok do nastepnego znaku.
         POP R6
         RETI
 end_transmision:
-        BIS #0010h, g_flags           ; powiadom ze chcemy kolejny teks do wyslania
-        
+        BIS #0010h, g_flags           ; powiadom ze chcemy kolejny tekst do wyslania.
         MOV 2(SP), R6
         BIC #CPUOFF, R6               ; zmodyfikuj lezace na stosie SR.
         MOV R6, 2(SP)                 ; aby obudzic procesor.
@@ -45,12 +44,12 @@ end_transmision:
         
         
 receive_usart:
-        MOV.B &U0RXBUF,g_r_char       ; czy to dobrze?
-        BIT #0001h, g_flags           ; czy zdarzylismy odebrac
-        JZ recive_next
-        BIS #0002h,g_flags            ; powiadom o bledzie
-recive_next:
-        BIS #0001h,g_flags            ; powiadom ze odebralismy
+        MOV.B &U0RXBUF,g_r_char       
+        BIT #0001h, g_flags           ; czy aplikacja zdarzyla odebrac?.
+        JZ receive_next
+        BIS #0002h,g_flags            ; powiadom o bledzie.
+receive_next:
+        BIS #0001h,g_flags            ; powiadom ze odebralismy.
         PUSH R6
         MOV 2(SP), R6
         BIC #CPUOFF, R6               ; zmodyfikuj lezace na stosie SR.
@@ -69,11 +68,6 @@ timer_A_int:
         RETI
 
 COMMON INTVEC(1)              ; Interrupt vectors.
-        ORG TIMERA1_VECTOR    ; /* 0xFFEA Timer A CC1-2, TA */.
-        DC16 default_int
-        
-        ORG TIMERA0_VECTOR    ; /* 0xFFEC Timer A CC0 */.
-        DC16 timer_A_int
         
         ORG PORT2_VECTOR      ; /* 0xFFE2 Port 2 */.
         DC16 default_int
@@ -87,8 +81,11 @@ COMMON INTVEC(1)              ; Interrupt vectors.
         ORG PORT1_VECTOR      ; /* 0xFFE8 Port 1 */.
         DC16 default_int
         
-      
-       
+        ORG TIMERA1_VECTOR    ; /* 0xFFEA Timer A CC1-2, TA */.
+        DC16 default_int
+        
+        ORG TIMERA0_VECTOR    ; /* 0xFFEC Timer A CC0 */.
+        DC16 timer_A_int
         
         ORG ADC12_VECTOR      ; /* 0xFFEE ADC */.
         DC16 default_int
