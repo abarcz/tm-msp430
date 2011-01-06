@@ -59,7 +59,6 @@ receive_next:
         
 timer_A_int:
         BIS #0020h, g_flags
-        ;ADD TACCR0, receive_timeout
         PUSH R6
         MOV 2(SP), R6
         BIC #CPUOFF, R6               ; zmodyfikuj lezace na stosie SR.
