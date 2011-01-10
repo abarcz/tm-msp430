@@ -3,11 +3,14 @@ NAME INTERRUPTS
 
 PUBLIC interrupts             ; Declare symbol to be exported.
 
-EXTERN g_r_char               ; bufor receive do przekazywania pojedynczego znaku.
+//EXTERN g_r_char               ; bufor receive do przekazywania pojedynczego znaku.
 EXTERN g_t_curr_char          ; wskaznik nastepnego znaku do wyslania przez trans.
 EXTERN g_t_chars_to_send      ; int ilosc znakow pozostala do wyslania przez trans.
 EXTERN g_flags                ; int flagi.
 EXTERN receive_timeout        ; czas o jaki trzeba przesunac timer A.
+EXTERN g_r_curr_char           ; wskaznik nastepnego znaku do wyslania przez trans
+EXTERN g_r_chars_received     ; ilosc znakow odebrana przez receive
+//EXTERN BUF_SIZE              ; pojemonsc bufora
 RSEG CODE                     ; Code is relocatable.
 
 /* znaczniki przekazywane miedzy ISR a petla glowna
@@ -44,16 +47,32 @@ end_transmision:
         
         
 receive_usart:
-        MOV.B &U0RXBUF,g_r_char       
+        PUSH R6 
+        PUSH R7
+        MOV.B &U0RXBUF,R6 
+        CMP #5, g_r_chars_received
+        JNE d
+        inc R12;
+      d:  CMP #32, g_r_chars_received
+        JNE cd
         BIT #0001h, g_flags           ; czy aplikacja zdarzyla odebrac?.
-        JZ receive_next
-        BIS #0002h,g_flags            ; powiadom o bledzie.
-receive_next:
-        BIS #0001h,g_flags            ; powiadom ze odebralismy.
-        PUSH R6
-        MOV 2(SP), R6
+        POP R7
+        POP R6
+        RETI
+        
+ cd:   
+        MOV g_r_curr_char, R7
+        MOV R6, 0(R7)
+        INC g_r_chars_received
+        SUB #0001h,g_r_curr_char
+        CMP #0001h,g_r_chars_received
+        JNE receive_next
+        BIS #0001h, g_flags           ; czy aplikacja zdarzyla odebrac?.
+        MOV 4(SP), R6
         BIC #CPUOFF, R6               ; zmodyfikuj lezace na stosie SR.
-        MOV R6, 2(SP)                 ; aby obudzic procesor.
+        MOV R6, 4(SP)                 ; aby obudzic procesor.
+receive_next:
+        POP R7
         POP R6
         RETI
         
