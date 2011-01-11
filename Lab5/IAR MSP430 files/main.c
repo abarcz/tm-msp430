@@ -9,7 +9,7 @@
 #define BUF_SIZE 32           // rozmiar buforow odbiorczo-nadawczych
 
 //timeout odbioru danych, pozwala stwierdzic koniec odbioru
-const int receive_timeout = SMCLK_FQ / BAUDRATE * 20;
+const int g_receive_timeout = SMCLK_FQ / BAUDRATE * 20;
 
 char *g_t_curr_char = NULL; // wskaznik nastepnego znaku do wyslania przez trans
 int g_t_chars_to_send = 0;  // ilosc znakow pozostala do wyslania przez trans
@@ -17,18 +17,19 @@ int g_t_chars_to_send = 0;  // ilosc znakow pozostala do wyslania przez trans
 char *g_r_curr_char = NULL; // wskaznik miejsca na nastepny odebrany znak
 int g_r_chars_received = 0; // ilosc znakow odebrana przez receive
 
+static char buffers[BUF_NUM][BUF_SIZE];
 /* znaczniki przekazywane miedzy ISR a petla glowna
 b0 = przerwanie receive zg³osi³o rozpoczêcie odbioru ci¹gu znaków
 b4 = przerwanie transmit zglosilo gotowosc do wyslania nowego tekstu
 b5 = przerwanie timerA zglosilo timeout 
 */
-int g_flags = 0;            
+int g_flags = 0; 
 
 int main( void )
 { 
   /***************** inicjalizacja systemu *****************/
   // bufory I/O
-  char buffers[BUF_NUM][BUF_SIZE];
+  
   char *err_buf = " MSP-ERROR: device reset.";
   const int err_buf_size = strlen(err_buf);
   
@@ -44,8 +45,7 @@ int main( void )
   
   // wyzerowanie bufora I/O
   memset(buffers, 0, BUF_SIZE * BUF_NUM);
-  BCSCTL1 |= RSEL0 + RSEL1 + RSEL2;
-  
+
   /*
   Przygotowanie zegarów.
   */   
@@ -68,7 +68,7 @@ int main( void )
   Timer A slu¿y do wykrycia idle line po zakoñczeniu odbioru znaków z URXD.
   */
   TACTL |= 0x0200;                // wybranie SMCLK dla TimerA
-  TACCR0 = receive_timeout; 
+  TACCR0 = g_receive_timeout; 
   
   /*
   Przygotowanie USART w trybie UART
@@ -101,7 +101,7 @@ mainloop:
       g_flags &= !BIT0;         // wyczyszczenie znacznika oczekujacej danej
       receive_on = 1;
       TACTL &= 0xFFCF;          // wylacz timerA
-      TACCR0 = receive_timeout; // zresetuj timer
+      TACCR0 = g_receive_timeout; // zresetuj timer
       TAR = 0;
       TACCTL0 |= CCIE;          // wlacz przerwania TODOOOOO
       TACTL |= MC_2;            // continous mode on
@@ -111,14 +111,15 @@ mainloop:
       __disable_interrupt();
         if (transmit_on)
           goto error;
-        g_t_curr_char = buffers[receive_buffer] + (BUF_SIZE - 1 - g_r_chars_received);
+       
+        g_t_curr_char = buffers[receive_buffer] + (BUF_SIZE - g_r_chars_received);
         g_t_chars_to_send = g_r_chars_received;
         
         g_r_chars_received = 0;
         receive_buffer = (receive_buffer + 1) % 2;  // przelaczenie buforow
         g_r_curr_char = buffers[receive_buffer] + BUF_SIZE - 1;
         TACTL &= 0xFFCF;          // wylacz timerA
-        TACCR0 = receive_timeout; // zresetuj timer
+        TACCR0 = g_receive_timeout; // zresetuj timer
         TAR = 0;
         transmit_on = 1;
         IE1 |= UTXIE0;
@@ -145,7 +146,7 @@ error:
   
   // wylacz i zresetuj timerA
   TACTL &= 0xFFCF;              
-  TACCR0 = receive_timeout;
+  TACCR0 = g_receive_timeout;
   TAR = 0; 
   TACCTL0 &= 0xFFEE;            // wylacz przerwania timeraA (CCIE, CCIFG)
   
