@@ -8,7 +8,8 @@ EXTERN g_t_chars_to_send      ; int ilosc znakow pozostala do wyslania przez tra
 EXTERN g_r_curr_char          ; wskaznik miejsca na nastepny odebrany znak.
 EXTERN g_r_chars_received     ; ilosc znakow odebrana przez receive.
 EXTERN g_flags                ; znaczniki do komunikacji z aplikacja.
-EXTERN receive_timeout        ; czas o jaki trzeba przesunac timer A.
+EXTERN g_receive_timeout      ; czas o jaki trzeba przesunac timer A.
+
 
 
 RSEG CODE                     ; Code is relocatable.
@@ -51,7 +52,9 @@ receive_usart:
         POP R7                        ; jesli przekroczono ilosc znakow, nic nie rob.
         POP R6
         RETI      
-not_full_yet:   
+not_full_yet:
+        ADD g_receive_timeout, TACCR0 ; przesun timeout
+        BIC #0001h, TACCTL0
         MOV g_r_curr_char, R7
         MOV.B R6, 0(R7)
         INC g_r_chars_received
