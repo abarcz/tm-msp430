@@ -1,0 +1,271 @@
+###############################################################################
+#                                                                             #
+#                                                       11/Jan/2011  14:41:22 #
+# IAR C/C++ Compiler V5.10.6.40180/W32, Kickstart LMS edition for MSP430      #
+# Copyright 1996-2010 IAR Systems AB.                                         #
+#                                                                             #
+#    __rt_version  =  3                                                       #
+#    __double_size =  32                                                      #
+#    __reg_r4      =  free                                                    #
+#    __reg_r5      =  free                                                    #
+#    __pic         =  no                                                      #
+#    __core        =  430                                                     #
+#    Source file   =  E:\various\_PW\TM\Lab_SVN\Lab5\IAR MSP430 files\main.c  #
+#    Command line  =  "E:\various\_PW\TM\Lab_SVN\Lab5\IAR MSP430              #
+#                     files\main.c" -lcN "E:\various\_PW\TM\Lab_SVN\Lab5\IAR  #
+#                     MSP430 files\Debug\List\" -o                            #
+#                     "E:\various\_PW\TM\Lab_SVN\Lab5\IAR MSP430              #
+#                     files\Debug\Obj\" --no_cse --no_unroll --no_inline      #
+#                     --no_code_motion --no_tbaa --debug -D__MSP430F149__ -e  #
+#                     --dlib_config "C:\Program Files (x86)\IAR               #
+#                     Systems\Embedded Workbench 6.0                          #
+#                     Kickstart\430\LIB\DLIB\dl430fn.h" -Ol                   #
+#    List file     =  E:\various\_PW\TM\Lab_SVN\Lab5\IAR MSP430               #
+#                     files\Debug\List\main.lst                               #
+#    Object file   =  E:\various\_PW\TM\Lab_SVN\Lab5\IAR MSP430               #
+#                     files\Debug\Obj\main.r43                                #
+#                                                                             #
+#                                                                             #
+###############################################################################
+
+E:\various\_PW\TM\Lab_SVN\Lab5\IAR MSP430 files\main.c
+      1          
+      2          #include "io430x16x.h"   
+      3          #include "intrinsics.h"
+      4          #include "string.h"           // memset
+      5          
+      6          #define BAUDRATE 115200       // zejscie ponizej 31250 wymusza wyliczanie U0BR1
+      7          #define SMCLK_FQ 8000000      // Hz
+      8          #define BUF_NUM 2             // ilosc buforow IO
+      9          #define BUF_SIZE 32           // rozmiar buforow odbiorczo-nadawczych
+     10          
+     11          //timeout odbioru danych, pozwala stwierdzic koniec odbioru
+     12          const int g_receive_timeout = SMCLK_FQ / BAUDRATE * 20;
+     13          
+     14          char *g_t_curr_char = NULL; // wskaznik nastepnego znaku do wyslania przez trans
+     15          int g_t_chars_to_send = 0;  // ilosc znakow pozostala do wyslania przez trans
+     16          
+     17          char *g_r_curr_char = NULL; // wskaznik miejsca na nastepny odebrany znak
+     18          int g_r_chars_received = 0; // ilosc znakow odebrana przez receive
+     19          
+     20          static char buffers[BUF_NUM][BUF_SIZE];
+     21          /* znaczniki przekazywane miedzy ISR a petla glowna
+     22          b0 = przerwanie receive zg³osi³o rozpoczêcie odbioru ci¹gu znaków
+     23          b4 = przerwanie transmit zglosilo gotowosc do wyslania nowego tekstu
+     24          b5 = przerwanie timerA zglosilo timeout 
+     25          */
+     26          int g_flags = 0; 
+     27          
+     28          int main( void )
+     29          { 
+     30            /***************** inicjalizacja systemu *****************/
+     31            // bufory I/O
+     32            
+     33            char *err_buf = " MSP-ERROR: device reset.";
+     34            const int err_buf_size = strlen(err_buf);
+     35            
+     36            int receive_buffer = 0;     // indeks bufora odbiorczego (t_buf=(r_buf+1)%2)
+     37            int receive_on = 0;         // jestesmy w trakcie odbioru wiersza
+     38            int transmit_on = 0;        // jestesmy w trakcie wysylania wiersza
+     39          
+     40            g_r_curr_char = buffers[receive_buffer] + BUF_SIZE - 1;
+     41            g_r_chars_received = 0;
+     42          
+     43            // Stop watchdog timer to prevent time out reset.
+     44            WDTCTL = WDTPW + WDTHOLD;
+     45            
+     46            // wyzerowanie bufora I/O
+     47            memset(buffers, 0, BUF_SIZE * BUF_NUM);
+     48          
+     49            /*
+     50            Przygotowanie zegarów.
+     51            */   
+     52            BCSCTL2 |= SELS;                // SMCLK = XT2 (obecny dla ukladu 611)
+     53                                            // gdyby go nie bylo, trzeba podlaczyc 
+     54                                            // LFXT1 w trybie XT
+     55            /*
+     56            Ustawienie portów:
+     57            P1.7 - dioda b³êdu
+     58            P3.4 - UTXD0
+     59            P3.5 - URXD0
+     60            */  
+     61            P1OUT &= !BIT7;                 // zgaszenie diody bledu 
+     62            P1DIR |= BIT7;                  // ustaw bit7 jako wyjsciowy
+     63            P3SEL |= BIT4 + BIT5;           // ustaw piny do obslugi RS232
+     64            P3DIR |= BIT4;        // ustaw pin 4 jako wyjscie :TODO: nie wiem czy potrzebne
+     65            
+     66            /*
+     67            Przygotowanie timera A.
+     68            Timer A slu¿y do wykrycia idle line po zakoñczeniu odbioru znaków z URXD.
+     69            */
+     70            TACTL |= 0x0200;                // wybranie SMCLK dla TimerA
+     71            TACCR0 = g_receive_timeout; 
+     72            
+     73            /*
+     74            Przygotowanie USART w trybie UART
+     75            */
+     76            U0CTL |= SWRST;
+     77            U0CTL |= PENA  + PEV + SPB;     
+     78            U0TCTL |= SSEL1;                // wybranie SMCLK dla USART
+     79            U0RCTL |= URXEIE;
+     80            U0BR0 = SMCLK_FQ / BAUDRATE - 1;// tylko jesli baudrate > 312500!
+     81            U0BR1 = 0;
+     82            U0MCTL = 0;
+     83            ME1 = UTXE0 + URXE0;            // wlaczenie receive i transmit
+     84            U0CTL &= !SWRST;                // wyzerowanie SWRST
+     85            IE1 |= URXIE0;                  // wlacz przerwania receive
+     86          
+     87            /***************** czêœæ aplikacyjna *****************/
+     88          mainloop:
+     89            while(1)
+     90            {
+     91              // Przejœcie w tryb uspienia + odlokowanie przerwañ
+     92              __bis_SR_register(LPM0_bits + GIE);
+     93              __no_operation();
+     94              
+     95              /***************** odebranie znaku *****************/
+     96              //TACCTL0 &= 0xFFEE;          // wylacz przerwania timeraA (CCIE, CCIFG)
+     97              if (g_flags & BIT0)         // rozpoczecie odbioru
+     98              {
+     99                if (receive_on && transmit_on)
+    100                  goto error;
+    101                g_flags &= !BIT0;         // wyczyszczenie znacznika oczekujacej danej
+    102                receive_on = 1;
+    103                TACTL &= 0xFFCF;          // wylacz timerA
+    104                TACCR0 = g_receive_timeout; // zresetuj timer
+    105                TAR = 0;
+    106                TACCTL0 |= CCIE;          // wlacz przerwania TODOOOOO
+    107                TACTL |= MC_2;            // continous mode on
+    108              }
+    109              if (g_flags & BIT5)         // timerA
+    110              {
+    111                __disable_interrupt();
+    112                  if (transmit_on)
+    113                    goto error;
+    114                 
+    115                  g_t_curr_char = buffers[receive_buffer] + (BUF_SIZE - g_r_chars_received);
+    116                  g_t_chars_to_send = g_r_chars_received;
+    117                  
+    118                  g_r_chars_received = 0;
+    119                  receive_buffer = (receive_buffer + 1) % 2;  // przelaczenie buforow
+    120                  g_r_curr_char = buffers[receive_buffer] + BUF_SIZE - 1;
+    121                  TACTL &= 0xFFCF;          // wylacz timerA
+    122                  TACCR0 = g_receive_timeout; // zresetuj timer
+    123                  TAR = 0;
+    124                  transmit_on = 1;
+    125                  IE1 |= UTXIE0;
+    126                  receive_on = 0;
+    127                  g_flags &= !BIT5;
+    128                __enable_interrupt();
+    129              }
+    130              __disable_interrupt();
+    131              if (g_flags & BIT4)         // zakoncz transmisje
+    132              {
+    133                transmit_on = 0;
+    134                g_flags &= !BIT4;
+    135                IE1 &= 0x7F;              // wylacz przerwania transmit
+    136                IFG1 |= UTXIFG0;          // zapewnij zgloszenie sie transmit po 
+    137                                          // odblokowaniu przerwania
+    138              }
+    139              __enable_interrupt();
+    140            } // koniec petli glownej aplikacji
+    141            
+    142            /*************** obs³uga b³êdu = komunikat + reset urz¹dzenia ***************/
+    143          error:
+    144            __disable_interrupt();        // namieszalismy, trzeba posprzatac
+    145            P1OUT |= BIT7;                // zapalenie diody bledu    
+    146            
+    147            // wylacz i zresetuj timerA
+    148            TACTL &= 0xFFCF;              
+    149            TACCR0 = g_receive_timeout;
+    150            TAR = 0; 
+    151            TACCTL0 &= 0xFFEE;            // wylacz przerwania timeraA (CCIE, CCIFG)
+    152            
+    153            // reset zmiennych sterujacych
+    154            receive_buffer = 0;
+    155            receive_on = 0;               
+    156            transmit_on = 0;
+    157            g_r_curr_char = buffers[receive_buffer] + BUF_SIZE - 1;
+    158            g_r_chars_received = 0;
+    159            
+    160            // wylaczenie przerwan receive na czas wyslania komunikatu o bledzie
+    161            IE1 &= 0xBF;                  // wylacz przerwania receive
+    162            // przygotowanie do wyslania
+    163            g_flags = 0;
+    164            g_t_curr_char = err_buf;
+    165            g_t_chars_to_send = err_buf_size;
+    166            
+    167            IFG1 |= UTXIFG0;              // zapewnij zgloszenie sie przerwania transmit
+    168            IE1 |= UTXIE0;                // wlacz przerwania transmit  
+    169            
+    170            // wyslanie komunikatu o bledzie
+    171            __enable_interrupt();
+    172            while (!(g_flags & BIT4))
+    173              ;
+    174            
+    175            __disable_interrupt();
+    176            IE1 &= 0x7F;                  // wylacz przerwania transmit
+    177            IE1 |= URXIE0;                // wlacz przerwania receive
+    178            IFG1 &= 0xBF;                 // skasowanie informacji o przerwaniu receive
+    179            IFG1 |= UTXIFG0;              // zapewnij zgloszenie sie przerwania transmit
+    180            g_flags = 0;
+    181          
+    182          goto mainloop;                  // petla aplikacyjna odblokuje przerwania
+    183          
+    184            return 0;
+    185          }
+
+   Maximum stack usage in bytes:
+
+     Function    CSTACK
+     --------    ------
+     main           12
+       -> strlen    12
+       -> memset    12
+
+
+   Segment part sizes:
+
+     Function/Label                         Bytes
+     --------------                         -----
+     _A_IE1                                    1
+     _A_IFG1                                   1
+     _A_ME1                                    1
+     _A_WDTCTL                                 2
+     _A_P1OUT                                  1
+     _A_P1DIR                                  1
+     _A_P3DIR                                  1
+     _A_P3SEL                                  1
+     _A_U0CTL                                  1
+     _A_U0TCTL                                 1
+     _A_U0RCTL                                 1
+     U0MCTL                                    1
+     U0BR0                                     1
+     U0BR1                                     1
+     _A_TACTL                                  2
+     _A_TACCTL0                                2
+     TAR                                       2
+     TACCR0                                    2
+     _A_BCSCTL2                                1
+     g_receive_timeout                         2
+     g_t_curr_char                             2
+     g_t_chars_to_send                         2
+     g_r_curr_char                             2
+     g_r_chars_received                        2
+     buffers                                  64
+     g_flags                                   2
+     main                                    512
+     ?<Constant " MSP-ERROR: device re...">   26
+
+ 
+ 512 bytes in segment CODE
+  24 bytes in segment DATA16_AN
+  28 bytes in segment DATA16_C
+  74 bytes in segment DATA16_Z
+ 
+ 512 bytes of CODE  memory
+  28 bytes of CONST memory
+  74 bytes of DATA  memory (+ 24 bytes shared)
+
+Errors: none
+Warnings: 1
