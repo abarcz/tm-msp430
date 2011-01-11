@@ -49,23 +49,37 @@ receive_usart:
         MOV.B U0RXBUF,R6 
         CMP #32, g_r_chars_received
         JNE not_full_yet
+        BIS #0020h, g_flags
         POP R7                        ; jesli przekroczono ilosc znakow, nic nie rob.
         POP R6
         RETI      
 not_full_yet:
-        ADD g_receive_timeout, TACCR0 ; przesun timeout
-        BIC #0001h, TACCTL0
+        ;ADD g_receive_timeout, TACCR0 ; przesun timeout
+        ;BIC #0001h, TACCTL0
+        CMP #13, R6 ;czy koniec linii
+        JNE cd
+        BIS #0020h, g_flags
+        MOV 4(SP), R7
+        BIC #CPUOFF, R7               ; zmodyfikuj lezace na stosie SR.
+        MOV R7, 4(SP)                 ; aby obudzic procesor.
+        POP R7
+        POP R6
+        RETI
+
+cd:
         MOV g_r_curr_char, R7
         MOV.B R6, 0(R7)
         INC g_r_chars_received
         SUB #0001h,g_r_curr_char
+        
         CMP #0001h,g_r_chars_received
         JNE receive_next
         BIS #0001h, g_flags           ; powiadom app o rozpoczeciu pobierania.
-        MOV 4(SP), R6
-        BIC #CPUOFF, R6               ; zmodyfikuj lezace na stosie SR.
-        MOV R6, 4(SP)                 ; aby obudzic procesor.
+        MOV 4(SP), R7
+        BIC #CPUOFF, R7               ; zmodyfikuj lezace na stosie SR.
+        MOV R7, 4(SP)                 ; aby obudzic procesor.
 receive_next:
+ 
         POP R7
         POP R6
         RETI
@@ -97,7 +111,7 @@ COMMON INTVEC(1)              ; Interrupt vectors.
         DC16 default_int
         
         ORG TIMERA0_VECTOR    ; /* 0xFFEC Timer A CC0 */.
-        DC16 timer_A_int
+        DC16 default_int
         
         ORG ADC12_VECTOR      ; /* 0xFFEE ADC */.
         DC16 default_int
