@@ -3,24 +3,21 @@ NAME INTERRUPTS
 
 PUBLIC interrupts             ; Declare symbol to be exported.
 
-//EXTERN g_r_char               ; bufor receive do przekazywania pojedynczego znaku.
 EXTERN g_t_curr_char          ; wskaznik nastepnego znaku do wyslania przez trans.
 EXTERN g_t_chars_to_send      ; int ilosc znakow pozostala do wyslania przez trans.
-EXTERN g_flags                ; int flagi.
+EXTERN g_r_curr_char          ; wskaznik miejsca na nastepny odebrany znak.
+EXTERN g_r_chars_received     ; ilosc znakow odebrana przez receive.
+EXTERN g_flags                ; znaczniki do komunikacji z aplikacja.
 EXTERN receive_timeout        ; czas o jaki trzeba przesunac timer A.
-EXTERN g_r_curr_char           ; wskaznik nastepnego znaku do wyslania przez trans
-EXTERN g_r_chars_received     ; ilosc znakow odebrana przez receive
-//EXTERN BUF_SIZE              ; pojemonsc bufora
+
+
 RSEG CODE                     ; Code is relocatable.
 
 /* znaczniki przekazywane miedzy ISR a petla glowna
-b0 = przerwanie receive zglosilo nowy znak w g_r_char;
-b1 = przerwanie zauwazylo, ze aplikacja nie wyczyscila b0 - nie nadazyla
-    z odebraniem danej z bufora g_r_char
+b0 = przerwanie receive zg³osi³o rozpoczêcie odbioru ci¹gu znaków
 b4 = przerwanie transmit zglosilo gotowosc do wyslania nowego tekstu
 b5 = przerwanie timerA zglosilo timeout 
-*/  
-
+*/
 interrupts
 
 default_int:
@@ -44,30 +41,24 @@ end_transmision:
         MOV R6, 2(SP)                 ; aby obudzic procesor.
         POP R6
         RETI
-        
-        
+            
 receive_usart:
         PUSH R6 
         PUSH R7
-        MOV.B &U0RXBUF,R6 
-        CMP #5, g_r_chars_received
-        JNE d
-        inc R12;
-      d:  CMP #32, g_r_chars_received
-        JNE cd
-        BIT #0001h, g_flags           ; czy aplikacja zdarzyla odebrac?.
-        POP R7
+        MOV.B U0RXBUF,R6 
+        CMP #32, g_r_chars_received
+        JNE not_full_yet
+        POP R7                        ; jesli przekroczono ilosc znakow, nic nie rob.
         POP R6
-        RETI
-        
- cd:   
+        RETI      
+not_full_yet:   
         MOV g_r_curr_char, R7
-        MOV R6, 0(R7)
+        MOV.B R6, 0(R7)
         INC g_r_chars_received
         SUB #0001h,g_r_curr_char
         CMP #0001h,g_r_chars_received
         JNE receive_next
-        BIS #0001h, g_flags           ; czy aplikacja zdarzyla odebrac?.
+        BIS #0001h, g_flags           ; powiadom app o rozpoczeciu pobierania.
         MOV 4(SP), R6
         BIC #CPUOFF, R6               ; zmodyfikuj lezace na stosie SR.
         MOV R6, 4(SP)                 ; aby obudzic procesor.
