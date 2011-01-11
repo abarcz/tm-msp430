@@ -6,55 +6,39 @@
 #define BAUDRATE 115200       // zejscie ponizej 31250 wymusza wyliczanie U0BR1
 #define SMCLK_FQ 8000000      // Hz
 #define BUF_NUM 2             // ilosc buforow IO
-#define BUF_SIZE 32           // rozmiar bufora odbiorczo-nadawczego
-
+#define BUF_SIZE 32           // rozmiar buforow odbiorczo-nadawczych
 
 //timeout odbioru danych, pozwala stwierdzic koniec odbioru
 const int receive_timeout = SMCLK_FQ / BAUDRATE * 20;
-//char g_r_char = '0';        // bufor receive do przekazywania pojedynczego znaku
 
 char *g_t_curr_char = NULL; // wskaznik nastepnego znaku do wyslania przez trans
 int g_t_chars_to_send = 0;  // ilosc znakow pozostala do wyslania przez trans
 
-char *g_r_curr_char = NULL; // wskaznik nastepnego znaku do wyslania przez trans
-int g_r_chars_received = 0;  // ilosc znakow pozostala do wyslania przez transr
+char *g_r_curr_char = NULL; // wskaznik miejsca na nastepny odebrany znak
+int g_r_chars_received = 0; // ilosc znakow odebrana przez receive
 
 /* znaczniki przekazywane miedzy ISR a petla glowna
-b0 = przerwanie receive zglosilo nowy znak w g_r_char; ROZPOCZECIE ODBIORU
-b1 = przerwanie zauwazylo, ze aplikacja nie wyczyscila b0 - nie nadazyla
-     z odebraniem danej z bufora g_r_char ZAKONCZENIE ODB Z BLEDEM
-
+b0 = przerwanie receive zg³osi³o rozpoczêcie odbioru ci¹gu znaków
 b4 = przerwanie transmit zglosilo gotowosc do wyslania nowego tekstu
 b5 = przerwanie timerA zglosilo timeout 
 */
 int g_flags = 0;            
 
 int main( void )
-{
+{ 
   /***************** inicjalizacja systemu *****************/
   // bufory I/O
-  //char buffer[BUF_SIZE];
   char buffers[BUF_NUM][BUF_SIZE];
   char *err_buf = " MSP-ERROR: device reset.";
   const int err_buf_size = strlen(err_buf);
-  //char i_char;                    // tymczasowy char do przechowania znaku
+  
+  int receive_buffer = 0;     // indeks bufora odbiorczego (t_buf=(r_buf+1)%2)
+  int receive_on = 0;         // jestesmy w trakcie odbioru wiersza
+  int transmit_on = 0;        // jestesmy w trakcie wysylania wiersza
 
-  //int r_buf_pos = BUF_SIZE - 1;   // pozycja kursora w buforze receive
-  //int buf_pos[BUF_NUM];           // pozycje kursorow w buforach
-  
-  int receive_buffer = 0;            // indeks bufora odbiorczego (transmit = (r_b + 1) % 2)
-  
-  
-  int receive_on = 0;             // jestesmy w trakcie odbioru wiersza
-  int transmit_on = 0;
-  //int ready_to_transmit = 0;      // istnieja dane gotowe do przeslania
-  
-  //buf_pos[0] = BUF_SIZE - 1;
-  //buf_pos[1] = BUF_SIZE - 1;
-  
   g_r_curr_char = buffers[receive_buffer] + BUF_SIZE - 1;
   g_r_chars_received = 0;
-  
+
   // Stop watchdog timer to prevent time out reset.
   WDTCTL = WDTPW + WDTHOLD;
   
@@ -152,79 +136,6 @@ mainloop:
                                 // odblokowaniu przerwania
     }
     __enable_interrupt();
-    /*
-    if (g_flags & BIT0)         // przerwanie receive zglasza dana do odebrania
-    {
-      // sekcja krytyczna odczytu 
-      __disable_interrupt();    
-        i_char = g_r_char;        // przepisanie znaku do bufora ap
-        g_r_char = 0;
-        g_flags &= !BIT0;         // wyczyszczenie znacznika oczekujacej danej
-        TACTL &= 0xFFCF;          // wylacz timerA
-        TACCR0 = TAR + receive_timeout; // zapewnij przerwanie po rec_timeout
-      __enable_interrupt();
-      // koniec sekcji krytycznej odczytu 
-      
-      // jesli aplikacja nie nadaza z odbieraniem danych od przerwania, blad
-      if (g_flags & BIT1)
-        goto error;      
-      if (transmit_on == 1)     // nie mo¿e jednoczeœnie odbieraæ i wysy³aæ
-        goto error;
-      if (receive_on == 0)      // jest to poczatek odbierania
-      { 
-        receive_on = 1;
-        TACCR0 = receive_timeout; // zresetuj timer
-        TAR = 0;
-        TACCTL0 |= CCIE;        // wlacz przerwania
-        TACTL |= MC_2;          // continous mode on
-      }
-      if (r_buf_pos < 0)
-      {
-        goto error;
-      }
-      else                      // zapisz dana do bufora
-      {
-        buffer[r_buf_pos] = i_char;
-        r_buf_pos--;
-        TACCTL0 |= CCIE;        // wlacz przerwania
-        TACTL |= MC_2;          // continous mode on
-      }
-    }
-    
-    else if (g_flags & BIT5)    // timerA zglosil timeout, a receive milczy
-    {
-      receive_on = 0;           // koniec odbierania
-      TACTL &= 0xFFCF;          // wylacz i zresetuj timerA
-      TACCR0 = receive_timeout;
-      TAR = 0;
-      
-      g_flags &= !BIT5;
-      if (r_buf_pos != BUF_SIZE - 1)    // jesli cos odebrano
-      {
-        ready_to_transmit = 1;  // zasygnalizuj gotowosc do przeslania
-      }
-    }
-    
-   
-    if (ready_to_transmit && (!transmit_on))
-    {
-      transmit_on = 1;
-      ready_to_transmit = 0;
-      g_t_curr_char = buffer + r_buf_pos + 1;
-      g_t_chars_to_send = BUF_SIZE - 1 - r_buf_pos;
-      IE1 |= UTXIE0;      // wlacz przerwania transmit - zleca wyslanie bufora
-    }
-    
-    
-    if (g_flags & BIT4)
-    {
-      transmit_on = 0;
-      g_flags &= !BIT4;
-      r_buf_pos = BUF_SIZE - 1;
-      IE1 &= 0x7F;              // wylacz przerwania transmit
-      IFG1 |= UTXIFG0;          // zapewnij zgloszenie sie transmit po 
-                                // odblokowaniu przerwania
-    }*/
   } // koniec petli glownej aplikacji
   
   /*************** obs³uga b³êdu = komunikat + reset urz¹dzenia ***************/
@@ -239,11 +150,10 @@ error:
   TACCTL0 &= 0xFFEE;            // wylacz przerwania timeraA (CCIE, CCIFG)
   
   // reset zmiennych sterujacych
+  receive_buffer = 0;
   receive_on = 0;               
   transmit_on = 0;
-  //ready_to_transmit = 0;
-  //r_buf_pos = BUF_SIZE - 1;
-  g_r_curr_char = buffers[receive_buffer];
+  g_r_curr_char = buffers[receive_buffer] + BUF_SIZE - 1;
   g_r_chars_received = 0;
   
   // wylaczenie przerwan receive na czas wyslania komunikatu o bledzie
