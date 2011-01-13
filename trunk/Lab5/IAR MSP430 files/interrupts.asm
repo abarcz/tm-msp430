@@ -1,7 +1,7 @@
 NAME INTERRUPTS
 
 #include "msp430.h"           ; Processor specific definitions.
-#include "shared.h"           ; wspolne definicje przerwan i aplikacji
+#include "shared.h"           ; wspolne definicje przerwan i aplikacji.
 
 PUBLIC interrupts             ; Declare symbol to be exported.
 
