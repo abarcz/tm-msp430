@@ -22,54 +22,54 @@ b6 = przerwanie receive zlosilo przepelnienie bufora odbiorczego
 interrupts
 
 default_int:
-        BIC.B #080h, P1OUT            ; zapala diode bledu.
+        BIC.B #080h, P1OUT    ; zapala diode bledu.
         RETI
         
 transmit_usart:
         PUSH R6
         CMP #0000h,g_t_chars_count    ; czy wszystko wyslano.
         JEQ end_transmision     
-        MOV g_t_curr_char,R6          ; wpisz adres znaku do R6.
-        MOV.B @R6, U0TXBUF            ; wyslij znak spod adresu z R6.
-        DEC g_t_chars_count           ; zmniejsz ilosc znakow do wyslania.
+        MOV g_t_curr_char,R6  ; wpisz adres znaku do R6.
+        MOV.B @R6, U0TXBUF    ; wyslij znak spod adresu z R6.
+        DEC g_t_chars_count   ; zmniejsz ilosc znakow do wyslania.
         ADD #0001h,g_t_curr_char      ; skok do nastepnego znaku.
         POP R6
         RETI
 end_transmision:
-        BIS #0010h, g_flags           ; powiadom o zakonczeniu wysylania.
+        BIS #0010h, g_flags   ; powiadom o zakonczeniu wysylania.
         MOV 2(SP), R6
-        BIC #CPUOFF, R6               ; zmodyfikuj lezace na stosie SR.
-        MOV R6, 2(SP)                 ; aby obudzic procesor.
+        BIC #CPUOFF, R6       ; zmodyfikuj lezace na stosie SR.
+        MOV R6, 2(SP)         ; aby obudzic procesor.
         POP R6
         RETI
             
 receive_usart:
         PUSH R6 
-        MOV.B U0RXBUF,R6              ; przepisz odebrany znak jak najszybciej.
-        CMP #LINE_END, R6             ; koniec linii? (nie zapisywany).
+        MOV.B U0RXBUF,R6      ; przepisz odebrany znak jak najszybciej.
+        CMP #LINE_END, R6     ; koniec linii? (nie zapisywany).
         JNE not_endl
-        BIC.B #0040h, IE1             ; blokuje przerwania receive.
-        BIS #0020h, g_flags           ; znacznik 'koniec linii'.
+        BIC.B #0040h, IE1     ; blokuje przerwania receive.
+        BIS #0020h, g_flags   ; znacznik 'koniec linii'.
         MOV 2(SP), R6
-        BIC #CPUOFF, R6               ; zmodyfikuj lezace na stosie SR.
-        MOV R6, 2(SP)                 ; aby obudzic procesor.
+        BIC #CPUOFF, R6       ; zmodyfikuj lezace na stosie SR.
+        MOV R6, 2(SP)         ; aby obudzic procesor.
         POP R6
         RETI
 not_endl: 
         CMP #BUF_SIZE, g_r_chars_count; przepelnienie?.
         JNE not_full
-        BIC.B #0040h, IE1             ; blokuje przerwania receive.
-        BIS #0040h, g_flags           ; znacznik 'przepelnienie'.
+        BIC.B #0040h, IE1     ; blokuje przerwania receive.
+        BIS #0040h, g_flags   ; znacznik 'przepelnienie'.
         MOV 2(SP), R6
-        BIC #CPUOFF, R6               ; zmodyfikuj lezace na stosie SR.
-        MOV R6, 2(SP)                 ; aby obudzic procesor.                     
+        BIC #CPUOFF, R6       ; zmodyfikuj lezace na stosie SR.
+        MOV R6, 2(SP)         ; aby obudzic procesor.                     
         POP R6
         RETI      
-not_full:                             ; wpisz znak do tablicy.                    
+not_full:                     ; wpisz znak do tablicy.                    
         PUSH R7
         MOV g_r_curr_char, R7
         MOV.B R6, 0(R7)
-        INC g_r_chars_count           ; zwieksz ilosc odebranych znakow.
+        INC g_r_chars_count   ; zwieksz ilosc odebranych znakow.
         ADD g_rec_addr_step, g_r_curr_char  ; zmien adres o wartosc kroku.
         POP R7
         POP R6
