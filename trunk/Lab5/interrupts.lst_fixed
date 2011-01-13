@@ -1,6 +1,6 @@
 ###############################################################################
 #                                                                             #
-#     IAR Assembler V5.10.4.50168/W32  for MSP430 13/Jan/2011  19:31:57       #
+#     IAR Assembler V5.10.4.50168/W32  for MSP430 13/Jan/2011  22:40:29       #
 #     Copyright 1996-2010 IAR Systems AB.                                     #
 #                                                                             #
 #           Target option =  MSP430                                           #
@@ -32,63 +32,68 @@
      14    000000              
      15    000000              RSEG CODE                     ; Code is relocatable
      16    000000              
-     17    000000              /* znaczniki przekazywane miedzy ISR a petla glowna
-     18    000000              b4 = przerwanie transmit zglosilo gotowosc do wyslania nowego tekstu
-     19    000000              b5 = przerwanie receive zglosilo koniec linii(odebrany wiersz)
-     20    000000              b6 = przerwanie receive zlosilo przepelnienie bufora odbiorczego
+     17    000000              /* znaczniki przekazywane miedzy ISR a petla
+                                glowna
+     18    000000              b4 = przerwanie transmit zglosilo gotowosc do
+                                wyslania nowego tekstu
+     19    000000              b5 = przerwanie receive zglosilo koniec linii
+                                (odebrany wiersz)
+     20    000000              b6 = przerwanie receive zlosilo przepelnienie
+                                bufora odbiorczego
      21    000000              */
      22    000000              interrupts
      23    000000              
      24    000000              default_int:
-     25    000000 F0C08000....         BIC.B #080h, P1OUT            ; zapala diode bledu
+     25    000000 F0C08000....         BIC.B #080h, P1OUT    ; zapala diode bledu
      26    000006 0013                 RETI
      27    000008                      
      28    000008              transmit_usart:
      29    000008 0612                 PUSH R6
      30    00000A 8093....             CMP #0000h,g_t_chars_count    ; czy wszystko wyslano
      31    00000E 0A24                 JEQ end_transmision     
-     32    000010 1640....             MOV g_t_curr_char,R6          ; wpisz adres znaku do R6
-     33    000014 E046....             MOV.B @R6, U0TXBUF            ; wyslij znak spod adresu z R6
-     34    000018 9083....             DEC g_t_chars_count           ; zmniejsz ilosc znakow do wyslania
-     35    00001C 9053....             ADD #0001h,g_t_curr_char      ; skok do nastepnego znaku
+     32    000010 1640....             MOV g_t_curr_char,R6  ; wpisz adres znaku do R6
+     33    000014 E046....             MOV.B @R6, U0TXBUF    ; wyslij znak spod adresu z R6
+     34    000018 9083....             DEC g_t_chars_count   ; zmniejsz ilosc znakow do wyslania
+     35    00001C 9053....             ADD #0001h,g_t_curr_char      ; skok do nastepneg o znaku
      36    000020 3641                 POP R6
      37    000022 0013                 RETI
      38    000024              end_transmision:
-     39    000024 B0D01000....         BIS #0010h, g_flags           ; powiadom o zakonczeniu wysylania 
+     39    000024 B0D01000....         BIS #0010h, g_flags   ; powiadom o zakonczeniu wysylania
      40    00002A 16410200             MOV 2(SP), R6
-     41    00002E 36C01000             BIC #CPUOFF, R6               ; zmodyfikuj lezace na stosie SR
-     42    000032 81460200             MOV R6, 2(SP)                 ; aby obudzic procesor
+     41    00002E 36C01000             BIC #CPUOFF, R6       ; zmodyfikuj lezace na stosie SR
+     42    000032 81460200             MOV R6, 2(SP)         ; aby obudzic procesor
      43    000036 3641                 POP R6
      44    000038 0013                 RETI
      45    00003A                          
      46    00003A              receive_usart:
      47    00003A 0612                 PUSH R6 
-     48    00003C 5640....             MOV.B U0RXBUF,R6              ; przepisz odebrany znak jak najszybciej
-     49    000040 36900D00             CMP #LINE_END, R6             ; koniec linii? (nie zapisywany)
+     48    00003C 5640....             MOV.B U0RXBUF,R6      ; przepisz odebrany znak jak najszybciej
+     49    000040 36900D00             CMP #LINE_END, R6     ; koniec linii? (nie zapisywany)
      50    000044 0E20                 JNE not_endl
-     51    000046 F0C04000....         BIC.B #0040h, IE1             ; blokuje przerwania receive
-     52    00004C B0D02000....         BIS #0020h, g_flags           ; znacznik 'koniec linii'
+     51    000046 F0C04000....         BIC.B #0040h, IE1     ; blokuje przerwania receive
+     52    00004C B0D02000....         BIS #0020h, g_flags   ; znacznik 'koniec linii'
      53    000052 16410200             MOV 2(SP), R6
-     54    000056 36C01000             BIC #CPUOFF, R6               ; zmodyfikuj lezace na stosie SR
-     55    00005A 81460200             MOV R6, 2(SP)                 ; aby obudzic procesor
+     54    000056 36C01000             BIC #CPUOFF, R6       ; zmodyfikuj lezace na stosie SR
+     55    00005A 81460200             MOV R6, 2(SP)         ; aby obudzic procesor
      56    00005E 3641                 POP R6
      57    000060 0013                 RETI
      58    000062              not_endl: 
-     59    000062 B0901400....         CMP #BUF_SIZE, g_r_chars_count; przepelnienie?
+     59    000062 B0901400....         CMP #BUF_SIZE, g_r_chars_count; przepel nienie?
      60    000068 0E20                 JNE not_full
-     61    00006A F0C04000....         BIC.B #0040h, IE1             ; blokuje przerwania receive
-     62    000070 B0D04000....         BIS #0040h, g_flags           ; znacznik 'przepelnienie'
+     61    00006A F0C04000....         BIC.B #0040h, IE1     ; blokuje przerwania receive
+     62    000070 B0D04000....         BIS #0040h, g_flags   ; znacznik 'przepelnienie'
      63    000076 16410200             MOV 2(SP), R6
-     64    00007A 36C01000             BIC #CPUOFF, R6               ; zmodyfikuj lezace na stosie SR
-     65    00007E 81460200             MOV R6, 2(SP)                 ; aby obudzic procesor              
-                                                      
+     64    00007A 36C01000             BIC #CPUOFF, R6       ; zmodyfikuj lezace na stosie SR
+     65    00007E 81460200             MOV R6, 2(SP)         ; aby obudzic procesor        
+                                                                         
+                                                              
      66    000082 3641                 POP R6
      67    000084 0013                 RETI      
-     68    000086              not_full:                             ; wpisz znak do tablicy                    
+     68    000086              not_full:                     ; wpisz znak do tablicy                    
      69    000086 0712                 PUSH R7
      70    000088 1740....             MOV g_r_curr_char, R7
      71    00008C C7460000             MOV.B R6, 0(R7)
-     72    000090 9053....             INC g_r_chars_count           ; zwieksz ilosc odebranych znakow
+     72    000090 9053....             INC g_r_chars_count   ; zwieksz ilosc odebranych znakow
      73    000094 9050........         ADD g_rec_addr_step, g_r_curr_char  ; zmien adres o wartosc kroku
      74    00009A 3741                 POP R7
      75    00009C 3641                 POP R6
@@ -142,7 +147,7 @@
     123    00001E              
     124    00001E              END
 ##############################
-#          CRC:56EC          #
+#          CRC:9300          #
 #        Errors:   0         #
 #        Warnings: 0         #
 #         Bytes: 188         #
