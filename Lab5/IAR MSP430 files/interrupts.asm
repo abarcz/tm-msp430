@@ -8,16 +8,16 @@ EXTERN g_t_chars_to_send      ; int ilosc znakow pozostala do wyslania przez tra
 EXTERN g_r_curr_char          ; wskaznik miejsca na nastepny odebrany znak.
 EXTERN g_r_chars_received     ; ilosc znakow odebrana przez receive.
 EXTERN g_flags                ; znaczniki do komunikacji z aplikacja.
-EXTERN g_receive_timeout      ; czas o jaki trzeba przesunac timer A.
+EXTERN g_rec_addr_step        ; krok o jaki zmieniamy adres
 
 
 
 RSEG CODE                     ; Code is relocatable.
 
 /* znaczniki przekazywane miedzy ISR a petla glowna
-b0 = przerwanie receive zg³osi³o rozpoczêcie odbioru ci¹gu znaków
 b4 = przerwanie transmit zglosilo gotowosc do wyslania nowego tekstu
-b5 = przerwanie timerA zglosilo timeout 
+b5 = przerwanie receive zglosilo koniec linii (odebrany wiersz)
+b6 = przerwanie receive zlosilo przepelnienie bufora odbiorczego
 */
 interrupts
 
@@ -29,6 +29,8 @@ transmit_usart:
         PUSH R6
         CMP #0000h,g_t_chars_to_send  ; czy wszystko wyslano.
         JEQ end_transmision
+        CMP #20h, g_t_chars_to_send
+        
         MOV g_t_curr_char,R6
         MOV.B @R6, U0TXBUF
         DEC g_t_chars_to_send
@@ -47,49 +49,34 @@ receive_usart:
         PUSH R6 
         PUSH R7
         MOV.B U0RXBUF,R6 
-        CMP #32, g_r_chars_received
+        CMP #21, g_r_chars_received
         JNE not_full_yet
-        BIS #0020h, g_flags
-        POP R7                        ; jesli przekroczono ilosc znakow, nic nie rob.
+        BIS #0040h, g_flags           ; znacznik 'przepelnienie'
+        BIC.B #0040h, IE1             ; blokuje przerwania receive
+                                      ; po przekroczeniu pojemnosci bufora
+        MOV 4(SP), R7
+        BIC #CPUOFF, R7               ; zmodyfikuj lezace na stosie SR.
+        MOV R7, 4(SP)                 ; aby obudzic procesor.
+        POP R7                        
         POP R6
         RETI      
 not_full_yet:
-        ;ADD g_receive_timeout, TACCR0 ; przesun timeout
-        ;BIC #0001h, TACCTL0
-        CMP #13, R6 ;czy koniec linii
+        CMP #13, R6                   ; czy koniec linii?
         JNE cd
-        BIS #0020h, g_flags
+        BIC.B #0040h, IE1             ; blokuje przerwania receive
+        BIS #0020h, g_flags           ; znacznik 'koniec linii'
         MOV 4(SP), R7
         BIC #CPUOFF, R7               ; zmodyfikuj lezace na stosie SR.
         MOV R7, 4(SP)                 ; aby obudzic procesor.
         POP R7
         POP R6
         RETI
-
-cd:
+cd:                                   ; wpisz znak do tablicy
         MOV g_r_curr_char, R7
         MOV.B R6, 0(R7)
         INC g_r_chars_received
-        SUB #0001h,g_r_curr_char
-        
-        CMP #0001h,g_r_chars_received
-        JNE receive_next
-        BIS #0001h, g_flags           ; powiadom app o rozpoczeciu pobierania.
-        MOV 4(SP), R7
-        BIC #CPUOFF, R7               ; zmodyfikuj lezace na stosie SR.
-        MOV R7, 4(SP)                 ; aby obudzic procesor.
-receive_next:
- 
+        ADD g_rec_addr_step, g_r_curr_char  ; zmien adres o wartosc kroku
         POP R7
-        POP R6
-        RETI
-        
-timer_A_int:
-        BIS #0020h, g_flags
-        PUSH R6
-        MOV 2(SP), R6
-        BIC #CPUOFF, R6               ; zmodyfikuj lezace na stosie SR.
-        MOV R6, 2(SP)                 ; aby obudzic procesor.
         POP R6
         RETI
 

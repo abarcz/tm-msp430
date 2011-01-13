@@ -6,45 +6,46 @@
 #define BAUDRATE 115200       // zejscie ponizej 31250 wymusza wyliczanie U0BR1
 #define SMCLK_FQ 8000000      // Hz
 #define BUF_NUM 2             // ilosc buforow IO
-#define BUF_SIZE 32           // rozmiar buforow odbiorczo-nadawczych
-
-//timeout odbioru danych, pozwala stwierdzic koniec odbioru
-const int g_receive_timeout = SMCLK_FQ / BAUDRATE * 20;
+#define BUF_SIZE 20           // rozmiar buforow odbiorczo-nadawczych
+#define LF 10
+#define CR 13
 
 char *g_t_curr_char = NULL; // wskaznik nastepnego znaku do wyslania przez trans
 int g_t_chars_to_send = 0;  // ilosc znakow pozostala do wyslania przez trans
 
 char *g_r_curr_char = NULL; // wskaznik miejsca na nastepny odebrany znak
 int g_r_chars_received = 0; // ilosc znakow odebrana przez receive
+int g_rec_addr_step = -1;
 
-static char buffers[BUF_NUM][BUF_SIZE];
+static char buffers[BUF_NUM][BUF_SIZE + 2];
 /* znaczniki przekazywane miedzy ISR a petla glowna
-b0 = przerwanie receive zg³osi³o rozpoczêcie odbioru ci¹gu znaków
 b4 = przerwanie transmit zglosilo gotowosc do wyslania nowego tekstu
-b5 = przerwanie timerA zglosilo timeout 
+b5 = przerwanie receive zglosilo koniec linii (odebrany wiersz)
+b6 = przerwanie receive zlosilo przepelnienie bufora odbiorczego
 */
 int g_flags = 0; 
 
+int temp;
+
 int main( void )
 { 
-  /***************** inicjalizacja systemu *****************/
-  // bufory I/O
-  
-  char *err_buf = " MSP-ERROR: device reset.";
-  const int err_buf_size = strlen(err_buf);
-  
-  int receive_buffer = 0;     // indeks bufora odbiorczego (t_buf=(r_buf+1)%2)
-  int receive_on = 0;         // jestesmy w trakcie odbioru wiersza
-  int transmit_on = 0;        // jestesmy w trakcie wysylania wiersza
-
-  g_r_curr_char = buffers[receive_buffer] + BUF_SIZE - 1;
-  g_r_chars_received = 0;
-
   // Stop watchdog timer to prevent time out reset.
   WDTCTL = WDTPW + WDTHOLD;
   
+  /***************** inicjalizacja systemu *****************/
+  // bufory I/O
+  char *err_buf1 = " MSP-ERROR: Line too long. Device reset. ";
+  char *err_buf2 = " MSP-ERROR: Requested second transfer. Device reset. ";
+  char *err_buf = err_buf1;
+  
+  int receive_buffer = 0;     // indeks bufora odbiorczego (t_buf=(r_buf+1)%2)
+  int transmit_on = 0;        // jestesmy w trakcie wysylania wiersza
+
+  g_r_curr_char = buffers[receive_buffer] + BUF_SIZE - 1 - 2;
+  g_r_chars_received = 0;
+  
   // wyzerowanie bufora I/O
-  memset(buffers, 0, BUF_SIZE * BUF_NUM);
+  memset(buffers, 0, (BUF_SIZE + 2) * BUF_NUM);
 
   /*
   Przygotowanie zegarów.
@@ -61,20 +62,11 @@ int main( void )
   P1OUT &= !BIT7;                 // zgaszenie diody bledu 
   P1DIR |= BIT7;                  // ustaw bit7 jako wyjsciowy
   P3SEL |= BIT4 + BIT5;           // ustaw piny do obslugi RS232
-  P3DIR |= BIT4;        // ustaw pin 4 jako wyjscie :TODO: nie wiem czy potrzebne
-  
-  /*
-  Przygotowanie timera A.
-  Timer A slu¿y do wykrycia idle line po zakoñczeniu odbioru znaków z URXD.
-  */
-  TACTL |= 0x0200;                // wybranie SMCLK dla TimerA
-  TACCR0 = g_receive_timeout; 
-  
+ 
   /*
   Przygotowanie USART w trybie UART
   */
-  U0CTL |= SWRST;
-  U0CTL |= PENA  + PEV + SPB;     
+  U0CTL |= SWRST;   
   U0TCTL |= SSEL1;                // wybranie SMCLK dla USART
   U0RCTL |= URXEIE;
   U0BR0 = SMCLK_FQ / BAUDRATE - 1;// tylko jesli baudrate > 312500!
@@ -85,6 +77,7 @@ int main( void )
   IE1 |= URXIE0;                  // wlacz przerwania receive
 
   /***************** czêœæ aplikacyjna *****************/
+  g_r_chars_received = 0;
 mainloop:
   while(1)
   {
@@ -92,43 +85,32 @@ mainloop:
     __bis_SR_register(LPM0_bits + GIE);
     __no_operation();
     
-    /***************** odebranie znaku *****************/
-    //TACCTL0 &= 0xFFEE;          // wylacz przerwania timeraA (CCIE, CCIFG)
-    if (g_flags & BIT0)         // rozpoczecie odbioru
-    {
-      if (receive_on && transmit_on)
-        goto error;
-      g_flags &= !BIT0;         // wyczyszczenie znacznika oczekujacej danej
-      receive_on = 1;
-      TACTL &= 0xFFCF;          // wylacz timerA
-      TACCR0 = g_receive_timeout; // zresetuj timer
-      TAR = 0;
-      TACCTL0 |= CCIE;          // wlacz przerwania TODOOOOO
-      TACTL |= MC_2;            // continous mode on
-    }
-    if (g_flags & BIT5)         // timerA
-    {
-      __disable_interrupt();
+  mainloop_internal:
+    /***************** zakonczenie odbioru *****************/
+    if (g_flags & BIT5)         // zakonczenie odbioru (znak konca linii)
+    {                           // IE receive wylaczone
         if (transmit_on)
-          goto error;
+        {
+          err_buf = err_buf2;
+          goto error;           // zakonczono kolejny odbior, gdy trwa transmit
+        }
        
-        g_t_curr_char = buffers[receive_buffer] + (BUF_SIZE - g_r_chars_received);
-        g_t_chars_to_send = g_r_chars_received;
-        
+        g_t_curr_char = buffers[receive_buffer] 
+            + (BUF_SIZE - g_r_chars_received - 2);
+        buffers[receive_buffer][BUF_SIZE - 1] = LF;
+        buffers[receive_buffer][BUF_SIZE - 2] = CR;
+        g_t_chars_to_send = g_r_chars_received + 2;
+
         g_r_chars_received = 0;
         receive_buffer = (receive_buffer + 1) % 2;  // przelaczenie buforow
-        g_r_curr_char = buffers[receive_buffer] + BUF_SIZE - 1;
-        TACTL &= 0xFFCF;          // wylacz timerA
-        TACCR0 = g_receive_timeout; // zresetuj timer
-        TAR = 0;
+        g_r_curr_char = buffers[receive_buffer] + BUF_SIZE - 1 - 2;
         transmit_on = 1;
-        IE1 |= UTXIE0;
-        receive_on = 0;
         g_flags &= !BIT5;
-      __enable_interrupt();
-    }
-    __disable_interrupt();
-    if (g_flags & BIT4)         // zakoncz transmisje
+        IE1 |= UTXIE0 + URXIE0; // wlacz przerwania transmit aby wyslac
+    }                           // oraz przerwania receive - drugi bufor
+    
+    /**************** zakonczenie transmisji ****************/
+    if (g_flags & BIT4)         // transmisja zakonczona
     {
       transmit_on = 0;
       g_flags &= !BIT4;
@@ -136,25 +118,29 @@ mainloop:
       IFG1 |= UTXIFG0;          // zapewnij zgloszenie sie transmit po 
                                 // odblokowaniu przerwania
     }
-    __enable_interrupt();
+    
+    /****************** blad przepelnienia ******************/
+    if (g_flags & BIT6)         // blad przepelnienia (IE receive wylaczone)
+    {
+        err_buf = err_buf1;
+        goto error;             // wyslij informacje o bledzie
+    }
+    
+    /************ sprawdz czy nie zglosilo sie kolejne przerwanie ************/
+    __disable_interrupt();
+    if (g_flags != 0)           // cos przyszlo w trakcie petli glownej
+      goto mainloop_internal;   // musimy to obsluzyc zanim zasniemy
   } // koniec petli glownej aplikacji
   
   /*************** obs³uga b³êdu = komunikat + reset urz¹dzenia ***************/
 error:
   __disable_interrupt();        // namieszalismy, trzeba posprzatac
   P1OUT |= BIT7;                // zapalenie diody bledu    
-  
-  // wylacz i zresetuj timerA
-  TACTL &= 0xFFCF;              
-  TACCR0 = g_receive_timeout;
-  TAR = 0; 
-  TACCTL0 &= 0xFFEE;            // wylacz przerwania timeraA (CCIE, CCIFG)
-  
+
   // reset zmiennych sterujacych
-  receive_buffer = 0;
-  receive_on = 0;               
+  receive_buffer = 0;              
   transmit_on = 0;
-  g_r_curr_char = buffers[receive_buffer] + BUF_SIZE - 1;
+  g_r_curr_char = buffers[receive_buffer] + BUF_SIZE - 1 - 2;
   g_r_chars_received = 0;
   
   // wylaczenie przerwan receive na czas wyslania komunikatu o bledzie
@@ -162,7 +148,7 @@ error:
   // przygotowanie do wyslania
   g_flags = 0;
   g_t_curr_char = err_buf;
-  g_t_chars_to_send = err_buf_size;
+  g_t_chars_to_send = strlen(err_buf);
   
   IFG1 |= UTXIFG0;              // zapewnij zgloszenie sie przerwania transmit
   IE1 |= UTXIE0;                // wlacz przerwania transmit  
@@ -173,6 +159,7 @@ error:
     ;
   
   __disable_interrupt();
+  g_t_chars_to_send = 0;
   IE1 &= 0x7F;                  // wylacz przerwania transmit
   IE1 |= URXIE0;                // wlacz przerwania receive
   IFG1 &= 0xBF;                 // skasowanie informacji o przerwaniu receive
