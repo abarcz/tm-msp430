@@ -94,7 +94,7 @@ mainloop:
   while(1)
   {
     // Przejœcie w tryb uspienia + odlokowanie przerwañ
-  //  __bis_SR_register(LPM0_bits + GIE);
+    __bis_SR_register(LPM0_bits + GIE);
     __no_operation();
     
 mainloop_internal:
