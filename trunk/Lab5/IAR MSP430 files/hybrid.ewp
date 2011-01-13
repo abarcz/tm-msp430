@@ -2169,6 +2169,9 @@
       </settings>
     </configuration>
   </file>
+  <file>
+    <name>$PROJ_DIR$\shared.h</name>
+  </file>
 </project>
 
 

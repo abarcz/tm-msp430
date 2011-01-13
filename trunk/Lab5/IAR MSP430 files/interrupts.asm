@@ -1,16 +1,16 @@
 NAME INTERRUPTS
+
 #include "msp430.h"           ; Processor specific definitions.
+#include "shared.h"           ; wspolne definicje przerwan i aplikacji
 
 PUBLIC interrupts             ; Declare symbol to be exported.
 
-EXTERN g_t_curr_char          ; wskaznik nastepnego znaku do wyslania przez trans.
-EXTERN g_t_chars_to_send      ; int ilosc znakow pozostala do wyslania przez trans.
+EXTERN g_t_curr_char          ; wskaznik nastepnego znaku do wyslania przez tr.
+EXTERN g_t_chars_count        ; int ilosc znakow pozostala do wyslania przez tr.
 EXTERN g_r_curr_char          ; wskaznik miejsca na nastepny odebrany znak.
-EXTERN g_r_chars_received     ; ilosc znakow odebrana przez receive.
+EXTERN g_r_chars_count        ; ilosc znakow odebrana przez receive.
 EXTERN g_flags                ; znaczniki do komunikacji z aplikacja.
-EXTERN g_rec_addr_step        ; krok o jaki zmieniamy adres
-
-
+EXTERN g_rec_addr_step        ; krok o jaki zmieniamy adres przy odbiorze.
 
 RSEG CODE                     ; Code is relocatable.
 
@@ -27,18 +27,16 @@ default_int:
         
 transmit_usart:
         PUSH R6
-        CMP #0000h,g_t_chars_to_send  ; czy wszystko wyslano.
-        JEQ end_transmision
-        CMP #20h, g_t_chars_to_send
-        
-        MOV g_t_curr_char,R6
-        MOV.B @R6, U0TXBUF
-        DEC g_t_chars_to_send
+        CMP #0000h,g_t_chars_count    ; czy wszystko wyslano.
+        JEQ end_transmision     
+        MOV g_t_curr_char,R6          ; wpisz adres znaku do R6.
+        MOV.B @R6, U0TXBUF            ; wyslij znak spod adresu z R6.
+        DEC g_t_chars_count           ; zmniejsz ilosc znakow do wyslania.
         ADD #0001h,g_t_curr_char      ; skok do nastepnego znaku.
         POP R6
         RETI
 end_transmision:
-        BIS #0010h, g_flags           ; powiadom ze chcemy kolejny tekst do wyslania.
+        BIS #0010h, g_flags           ; powiadom o zakonczeniu wysylania.
         MOV 2(SP), R6
         BIC #CPUOFF, R6               ; zmodyfikuj lezace na stosie SR.
         MOV R6, 2(SP)                 ; aby obudzic procesor.
@@ -47,35 +45,32 @@ end_transmision:
             
 receive_usart:
         PUSH R6 
-        PUSH R7
-        MOV.B U0RXBUF,R6 
-        CMP #21, g_r_chars_received
-        JNE not_full_yet
-        BIS #0040h, g_flags           ; znacznik 'przepelnienie'
-        BIC.B #0040h, IE1             ; blokuje przerwania receive
-                                      ; po przekroczeniu pojemnosci bufora
-        MOV 4(SP), R7
-        BIC #CPUOFF, R7               ; zmodyfikuj lezace na stosie SR.
-        MOV R7, 4(SP)                 ; aby obudzic procesor.
-        POP R7                        
-        POP R6
-        RETI      
-not_full_yet:
-        CMP #13, R6                   ; czy koniec linii?
-        JNE cd
-        BIC.B #0040h, IE1             ; blokuje przerwania receive
-        BIS #0020h, g_flags           ; znacznik 'koniec linii'
-        MOV 4(SP), R7
-        BIC #CPUOFF, R7               ; zmodyfikuj lezace na stosie SR.
-        MOV R7, 4(SP)                 ; aby obudzic procesor.
-        POP R7
+        MOV.B U0RXBUF,R6              ; przepisz odebrany znak jak najszybciej.
+        CMP #LINE_END, R6             ; koniec linii? (nie zapisywany).
+        JNE not_endl
+        BIC.B #0040h, IE1             ; blokuje przerwania receive.
+        BIS #0020h, g_flags           ; znacznik 'koniec linii'.
+        MOV 2(SP), R6
+        BIC #CPUOFF, R6               ; zmodyfikuj lezace na stosie SR.
+        MOV R6, 2(SP)                 ; aby obudzic procesor.
         POP R6
         RETI
-cd:                                   ; wpisz znak do tablicy
+not_endl: 
+        CMP #BUF_SIZE, g_r_chars_count; przepelnienie?.
+        JNE not_full
+        BIC.B #0040h, IE1             ; blokuje przerwania receive.
+        BIS #0040h, g_flags           ; znacznik 'przepelnienie'.
+        MOV 2(SP), R6
+        BIC #CPUOFF, R6               ; zmodyfikuj lezace na stosie SR.
+        MOV R6, 2(SP)                 ; aby obudzic procesor.                     
+        POP R6
+        RETI      
+not_full:                             ; wpisz znak do tablicy.                    
+        PUSH R7
         MOV g_r_curr_char, R7
         MOV.B R6, 0(R7)
-        INC g_r_chars_received
-        ADD g_rec_addr_step, g_r_curr_char  ; zmien adres o wartosc kroku
+        INC g_r_chars_count           ; zwieksz ilosc odebranych znakow.
+        ADD g_rec_addr_step, g_r_curr_char  ; zmien adres o wartosc kroku.
         POP R7
         POP R6
         RETI
