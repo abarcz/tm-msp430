@@ -94,7 +94,7 @@ mainloop:
   while(1)
   {
     // Przejœcie w tryb uspienia + odlokowanie przerwañ
-    __bis_SR_register(LPM0_bits + GIE);
+  //  __bis_SR_register(LPM0_bits + GIE);
     __no_operation();
     
 mainloop_internal:
@@ -109,8 +109,7 @@ mainloop_internal:
         }
        
         /* przygotuj aktualny bufor odbiorczy jako bufor do wyslania */
-        g_t_curr_char = g_buffers[rec_buff_index] 
-            + (BUF_SIZE - g_r_chars_count);
+        g_t_curr_char = g_r_curr_char + 1;
         g_t_chars_count = g_r_chars_count + LN_ENDING_CHARS;
         
         /* przygotuj drugi bufor jako bufor odbiorczy */
