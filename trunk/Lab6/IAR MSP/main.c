@@ -9,9 +9,9 @@
 #define COUNT_TIMES 4       // tyle musi sie pojawic poprawnych zliczen
 #define TOTAL_COUNTS 24     // maksymalna liczba zliczen
 
-text_bufor[] = {            // bufor napisow
+char* text_bufor[] = {            // bufor napisow
   "Marymont",
-  "slodowiec"} 
+  "slodowiec"}; 
 int index = 0;              // aktualnie wyswietlany index
 
 /* bufory I/O realizujace podwojne buforowanie */
@@ -33,10 +33,10 @@ int main( void )
   /***************** inicjalizacja systemu *****************/
   int all_counts = 0;              // liczba wszystkich zliczen
   int counts_in_row = 0;           // liczba zliczen z rzedu
-  bool button_pressed= false;      // ustawiana po eliminacji drgan stykow
-  bool waiting_for_relase = false  // @true oznacza ze czekamy na zwolnieni guzika
+  int button_pressed= 0;      // ustawiana po eliminacji drgan stykow
+  int waiting_for_relase = 0;  // @true oznacza ze czekamy na zwolnieni guzika
                                    // @false ze na nacisniecie guzika
-  bool index_change = false;       // zmiana indeksu nastapila
+  int index_change = 0;       // zmiana indeksu nastapila
   /*
   Przygotowanie zegarów.
   */   
@@ -66,7 +66,7 @@ mainloop_internal:
   if(index_change){
     //wypisz znak
     //zapisz indeks do pamieci
-    index_change = false;
+    index_change = 0;
   }
   // jezeli przerwanie zglosil przycisk zablokuj przerwania obu przyciskow i wlacz timer
   if((g_flags & BIT0)|| (g_flags & BIT1)){
@@ -77,10 +77,10 @@ mainloop_internal:
 
   // eliminacja drgan stykow// liczenie do 4 // przerwania timera
   if(g_flags & BIT2){
-    allcounts++;
-    if(allcounts >= TOTAL_COUNTS){ // koniec eliminacji
+    all_counts++;
+    if(all_counts >= TOTAL_COUNTS){ // koniec eliminacji
       //TODOwylacz timer
-      allcounts =0;
+      all_counts =0;
       counts_in_row = 0;
     }
     else{
@@ -101,7 +101,7 @@ mainloop_internal:
 
           waiting_for_relase = !waiting_for_relase;
           if(!waiting_for_relase)         // jezeli przycisk jest puszczony
-            //TODO wylacz timer
+            ;//TODO wylacz timer
       }
     }
     g_flags &= !BIT2;         //kasuj flage
@@ -118,8 +118,8 @@ mainloop_internal:
     }
     g_flags &= !  BIT0;
     g_flags &= !  BIT1;
-    index_change = true;
-    button_pressed = false
+    index_change = 1;
+    button_pressed = 0;
     
   }
   // jezeli flagi nie puste powrot do mainloop
