@@ -4,7 +4,6 @@
 #include "string.h"           // memset
 #include "shared.h"           // wspolne definicje przerwan i aplikacji
 
-
 #define ELEMENT_NUMBER 2    // liczba napisow w buforze
 #define COUNT_TIMES 4       // tyle musi sie pojawic poprawnych zliczen
 #define TOTAL_COUNTS 24     // maksymalna liczba zliczen
@@ -12,6 +11,7 @@
 char* text_bufor[] = {            // bufor napisow
   "Marymont",
   "slodowiec"}; 
+
 int index = 0;              // aktualnie wyswietlany index
 
 /* bufory I/O realizujace podwojne buforowanie */
