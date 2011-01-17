@@ -6,6 +6,9 @@
 
 
 #define ELEMENT_NUMBER 2    // liczba napisow w buforze
+#define COUNT_TIMES 4       // tyle musi sie pojawic poprawnych zliczen
+#define TOTAL_COUNTS 24     // maksymalna liczba zliczen
+
 text_bufor[] = {            // bufor napisow
   "Marymont",
   "slodowiec"} 
@@ -18,7 +21,7 @@ int index = 0;              // aktualnie wyswietlany index
 b0 = przycisk lewy zglasza przerwanie
 b1 = przycisk prawy zglasza przerwanie
 b2 = timer zglasza przerwanie
-
+b3 = aktualny stan guzika
 */
 int g_flags = 0; 
 
@@ -28,8 +31,11 @@ int main( void )
   WDTCTL = WDTPW + WDTHOLD;
   
   /***************** inicjalizacja systemu *****************/
-   
+  int all_counts = 0;              // liczba wszystkich zliczen
+  int counts_in_row = 0;           // liczba zliczen z rzedu
   bool button_pressed= false;      // ustawiana po eliminacji drgan stykow
+  bool waiting_for_relase = false  // @true oznacza ze czekamy na zwolnieni guzika
+                                   // @false ze na nacisniecie guzika
   bool index_change = false;       // zmiana indeksu nastapila
   /*
   Przygotowanie zegarów.
@@ -45,19 +51,7 @@ int main( void )
   P1DIR |= BIT7;                  // ustaw bit7 jako wyjsciowy
   P3SEL |= BIT4 + BIT5;           // ustaw piny do obslugi RS232
  */
-  /*
-  Przygotowanie USART w trybie UART
-  */
- /* U0CTL |= SWRST;   
-  U0TCTL |= SSEL1;                // wybranie SMCLK dla USART
-  U0RCTL |= URXEIE;
-  U0BR0 = SMCLK_FQ / BAUDRATE - 1;// tylko jesli baudrate > 312500!
-  U0BR1 = 0;
-  U0MCTL = 0;
-  ME1 = UTXE0 + URXE0;            // wlaczenie receive i transmit
-  U0CTL &= !SWRST;                // wyzerowanie SWRST
-  IE1 |= URXIE0;                  // wlacz przerwania receive
-*/
+
   /***************** czêœæ aplikacyjna *****************/
 mainloop:
   while(1)
@@ -71,6 +65,7 @@ mainloop_internal:
   // jezeli index byl zmieniany wypisz znak o indexsie na wyswietlacz //obsluga wyswietlacza
   if(index_change){
     //wypisz znak
+    //zapisz indeks do pamieci
     index_change = false;
   }
   // jezeli przerwanie zglosil przycisk zablokuj przerwania obu przyciskow i wlacz timer
@@ -82,21 +77,49 @@ mainloop_internal:
 
   // eliminacja drgan stykow// liczenie do 4 // przerwania timera
   if(g_flags & BIT2){
+    allcounts++;
+    if(allcounts >= TOTAL_COUNTS){ // koniec eliminacji
+      //TODOwylacz timer
+      allcounts =0;
+      counts_in_row = 0;
+    }
+    else{
+      if(!waiting_for_relase){               // czekamy na nacisniecie
+         if( g_flags & !BIT2)               // czy BIT2 == 0, wcisnieto
+           counts_in_row++;
+         else
+           counts_in_row = 0;
+      }
+      else{                                 // czekamy na zwolnienie
+         if( g_flags & BIT2)                // czy BIT2 == 1, zwolniono
+           counts_in_row++;
+         else
+           counts_in_row = 0;
+        
+      }
+      if(counts_in_row == COUNT_TIMES){   // jesli wykrylismy zmiana button to zmieniamy
+
+          waiting_for_relase = !waiting_for_relase;
+          if(!waiting_for_relase)         // jezeli przycisk jest puszczony
+            //TODO wylacz timer
+      }
+    }
+    g_flags &= !BIT2;         //kasuj flage
   }
  
   // jezeli wykryto wcisniecie przycisku zmien index, ustaw flage indexu
-  if(button_pressed){
+  if(button_pressed ){
       // zmien indeks
     if((g_flags & BIT0)&&(index>0) ){ // przesuniecie w lewo; zatrzask w 0
       index--;
     }
-    if((g_flags &BIT1)&& (index < ELEMENT_NUMBER)){
+    if((g_flags &BIT1)&& (index < ELEMENT_NUMBER)){ //przesunie w prawo
       index++;
     }
     g_flags &= !  BIT0;
     g_flags &= !  BIT1;
     index_change = true;
-    button_pressed = false;
+    button_pressed = false
     
   }
   // jezeli flagi nie puste powrot do mainloop
