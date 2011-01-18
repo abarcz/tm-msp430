@@ -37,9 +37,16 @@ int main( void )
   int waiting_for_relase = 0;  // @true oznacza ze czekamy na zwolnieni guzika
                                    // @false ze na nacisniecie guzika
   int index_change = 0;       // zmiana indeksu nastapila
+  
   /*
   Przygotowanie zegarów.
   */   
+
+  
+  /*
+  Przygotowanie timera A
+  */
+ 
   
   /*
   Ustawienie portów:
@@ -47,23 +54,113 @@ int main( void )
   P3.4 - UTXD0
   P3.5 - URXD0
   */  
-/*  P1OUT &= !BIT7;                 // zgaszenie diody bledu 
-  P1DIR |= BIT7;                  // ustaw bit7 jako wyjsciowy
-  P3SEL |= BIT4 + BIT5;           // ustaw piny do obslugi RS232
+  P5DIR |= 0XFF;     
+  // ustawienie portow jako wyjscia
+  P1DIR |= BIT0 + BIT2+BIT3;       // linie danych
+  P6OUT &= !BIT0;                 // zgaszenie diody bledu 
+  P6DIR |= BIT0;                  // ustaw bit7 jako wyjsciowy
+  P5OUT = 0;
+  P1OUT = 0;
+  
+  
+  /*P3SEL |= BIT4 + BIT5;           // ustaw piny do obslugi RS232
  */
-
+  
+  // POWER UP LCD
+ /*  P5OUT = DX_FN_SET;
+    __no_operation();
+    P1OUT = CTRL_E;
+    __no_operation();
+    P1OUT &= !CTRL_E;
+    P5OUT = DX_FN_SET;
+    __no_operation();
+    P1OUT = CTRL_E;
+    __no_operation();
+    P1OUT &= !CTRL_E;
+    P5OUT = DX_FN_SET;
+    __no_operation();
+    P1OUT = CTRL_E;
+    __no_operation();
+    P1OUT &= !CTRL_E;
+    
+    P5OUT = DX_FN_SET;
+    __no_operation();
+    P1OUT = CTRL_E;
+    __no_operation();
+    P1OUT &= !CTRL_E;
+    
+    P5OUT = 0x08;
+    __no_operation();
+    P1OUT = CTRL_E;
+    __no_operation();
+    P1OUT &= !CTRL_E;
+    
+    P5OUT = 0x01;
+    __no_operation();
+    P1OUT = CTRL_E;
+    __no_operation();
+    P1OUT &= !CTRL_E;
+    
+    P5OUT = DX_ENTRY_MODE_SET ;
+    __no_operation();
+    P1OUT = CTRL_E;
+    __no_operation();
+    P1OUT &= !CTRL_E;
+    
+    P5OUT = 'a'; 
+    __no_operation();
+    P1OUT = CTRL_E;
+    __no_operation();
+    P1OUT &= !CTRL_E;*/
   /***************** czêœæ aplikacyjna *****************/
 mainloop:
   while(1)
   {
+   
     // Przejœcie w tryb uspienia + odlokowanie przerwañ
-    __bis_SR_register(LPM0_bits + GIE);
+    //__bis_SR_register(LPM0_bits + GIE);
     __no_operation();
+    
+    P5OUT =DX_RETURN_HOME;
+    __no_operation();
+    P1OUT |= CTRL_E;
+    __no_operation();
+    P1OUT &= CTRL_NE;
+    
+    P5OUT = DX_FN_SET;
+    __no_operation();
+    P1OUT |= CTRL_E;
+    __no_operation();
+    P1OUT &= CTRL_NE;
+    P5OUT = 0x0F;//DX_DISP_ON_OFF ;
+    __no_operation();
+    P1OUT |= CTRL_E;
+    __no_operation();
+    P1OUT &= CTRL_NE;
+    P5OUT = DX_ENTRY_MODE_SET ;
+    __no_operation();
+    P1OUT |= CTRL_E;
+    __no_operation();
+    P1OUT &= CTRL_NE;
+    //DANE
+    P1OUT |= CTRL_RS;
+    __no_operation();
+    P1OUT |= CTRL_E;
+    __no_operation();
+    P1OUT &= CTRL_NE;
+    P5OUT = 0x62; 
+    __no_operation();
+    P1OUT |= CTRL_E;
+    __no_operation();
+    P1OUT &= CTRL_NE;
+      
+    //  P5OUT =DX_RETURN_HOME ; 
+    
     
 mainloop_internal:
   //---------------KONCEPCJA
   // jezeli index byl zmieniany wypisz znak o indexsie na wyswietlacz //obsluga wyswietlacza
-  if(index_change){
+  /*if(index_change){
     //wypisz znak
     //zapisz indeks do pamieci
     index_change = 0;
@@ -125,95 +222,7 @@ mainloop_internal:
   // jezeli flagi nie puste powrot do mainloop
   if(g_flags!= 0)
     goto mainloop_internal;
-  
-  
-  /***************** zakonczenie odbioru *****************/
-  /*  if (g_flags & BIT5)         // zakonczenie odbioru (znak konca linii)
-    {   */                        // przerwania receive sa wylaczone
-        /* jesli trwa wysylanie, nie mozemy uruchomic kolejnego - blad */
-    /*    if (ongoing_trans)
-        {
-          err_buf = err_buf_sec_trans;  // ustaw komunikat bledu
-          goto error;           
-        }
-      */ 
-        /* przygotuj aktualny bufor odbiorczy jako bufor do wyslania */
-       // g_t_curr_char = g_r_curr_char + 1;
-        //g_t_chars_count = g_r_chars_count + LN_ENDING_CHARS;
-        
-        /* przygotuj drugi bufor jako bufor odbiorczy */
-       /* rec_buff_index = (rec_buff_index + 1) % 2;  
-        g_r_curr_char = g_buffers[rec_buff_index] + BUF_SIZE - 1;
-        g_r_chars_count = 0;
-        
-        g_flags &= !BIT5;
-        */
-        /* wlacz wysylanie z jednego bufora oraz odbieranie do drugiego */
-        /*ongoing_trans = 1;      // trwa wysylanie
-        IE1 |= UTXIE0 + URXIE0; // wlacz przerwania transmit i receive
-    }                           
-    */
-    /**************** zakonczenie transmisji ****************/
-/*if (g_flags & BIT4)         // transmisja zakonczona
-    {
-      ongoing_trans = 0;
-      g_flags &= !BIT4;
-      IE1 &= 0x7F;              // wylacz przerwania transmit
-      IFG1 |= UTXIFG0;          // zapewnij zgloszenie sie transmit po 
-                                // odblokowaniu przerwania
-    }
-  */  
-    /****************** blad przepelnienia ******************/
-   /* if (g_flags & BIT6)         // blad przepelnienia (IE receive wylaczone)
-    {
-        err_buf = err_buf_overflow; // ustaw komunikat bledu
-        goto error;             // wyslij informacje o bledzie
-    }
-    */
-    /************ sprawdz czy nie zglosilo sie kolejne przerwanie ************/
-    /*__disable_interrupt();
-      if (g_flags != 0)           // cos przyszlo w trakcie petli glownej
-      {
-        __enable_interrupt();
-        goto mainloop_internal;   // musimy to obsluzyc zanim zasniemy
-      }*/                           // petla glowna odblokuje przerwania
-  }                               // koniec petli glownej aplikacji
-  
-  /*************** obs³uga b³êdu = komunikat + reset urz¹dzenia ***************/
-/*error:
-  __disable_interrupt();        // namieszalismy, trzeba posprzatac
-  P1OUT |= BIT7;                // zapalenie diody bledu    
-
-  // reset zmiennych sterujacych
-  rec_buff_index = 0;              
-  ongoing_trans = 0;
-  g_r_curr_char = g_buffers[rec_buff_index] + BUF_SIZE - 1;
-  g_r_chars_count = 0;
-  
-  // wylaczenie przerwan receive na czas wyslania komunikatu o bledzie
-  IE1 &= 0xBF;                  // wylacz przerwania receive
-  // przygotowanie do wyslania
-  g_flags = 0;
-  g_t_curr_char = err_buf;
-  g_t_chars_count = strlen(err_buf);
-  
-  IFG1 |= UTXIFG0;              // zapewnij zgloszenie sie przerwania transmit
-  IE1 |= UTXIE0;                // wlacz przerwania transmit  
-  
-  // wyslanie komunikatu o bledzie
-  __enable_interrupt();
-  while (!(g_flags & BIT4))
-    ;
-  
-  __disable_interrupt();
-  g_t_chars_count = 0;
-  IE1 &= 0x7F;                  // wylacz przerwania transmit
-  IE1 |= URXIE0;                // wlacz przerwania receive
-  IFG1 &= 0xBF;                 // skasowanie informacji o przerwaniu receive
-  IFG1 |= UTXIFG0;              // zapewnij zgloszenie sie przerwania transmit
-  g_flags = 0;
-
-goto mainloop;                  // petla aplikacyjna odblokuje przerwania
-*/
+  */
+  }
   return 0;
 }
