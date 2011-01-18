@@ -25,7 +25,7 @@ default_int:
         BIC.B #080h, P1OUT    ; zapala diode bledu.
         RETI
         
-transmit_usart:
+/*transmit_usart:
         PUSH R6
         CMP #0000h,g_t_chars_count    ; czy wszystko wyslano.
         JEQ end_transmision     
@@ -73,7 +73,7 @@ not_full:                     ; wpisz znak do tablicy.
         ADD g_rec_addr_step, g_r_curr_char  ; zmien adres o wartosc kroku.
         POP R7
         POP R6
-        RETI
+        RETI*/
 
 COMMON INTVEC(1)              ; Interrupt vectors.
         
@@ -99,10 +99,10 @@ COMMON INTVEC(1)              ; Interrupt vectors.
         DC16 default_int
         
         ORG USART0TX_VECTOR   ; /* 0xFFF0 USART 0 Transmit */.
-        DC16 transmit_usart
+        DC16 default_int
         
         ORG USART0RX_VECTOR   ; /* 0xFFF2 USART 0 Receive */.
-        DC16 receive_usart
+        DC16 default_int
         
         ORG WDT_VECTOR        ; /* 0xFFF4 Watchdog Timer */.
         DC16 default_int
