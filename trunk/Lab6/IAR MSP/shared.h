@@ -12,4 +12,10 @@
 #define CTRL_BLT  0x08     // podswietlenie
 #define CTRL_RS   0x04     // wybór rejestru
 #define CTRL_E    0x01     // strob transmisji danych
-#define CTRL_NE   0xFE
+#define CTRL_NE   0xFE     
+
+
+#define MASK_E 0x01
+#define MASK_RS 0x02
+
+ komendy LCD
