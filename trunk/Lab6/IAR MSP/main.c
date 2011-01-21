@@ -1,4 +1,4 @@
-#include "msp430x14x.h"
+#include "msp430x16x.h"
 #include "intrinsics.h"
 #include "math.h"
 #include "string.h"
