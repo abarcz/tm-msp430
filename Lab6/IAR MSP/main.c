@@ -1,228 +1,188 @@
+    #include "msp430x14x.h"
+    #include "intrinsics.h"
+    #include "math.h"
+    #include "string.h"
 
-#include "io430x16x.h"   
-#include "intrinsics.h"
-#include "string.h"           // memset
-#include "shared.h"           // wspolne definicje przerwan i aplikacji
 
-#define ELEMENT_NUMBER 2    // liczba napisow w buforze
-#define COUNT_TIMES 4       // tyle musi sie pojawic poprawnych zliczen
-#define TOTAL_COUNTS 24     // maksymalna liczba zliczen
+    #define MASK_E 0x01
+    #define MASK_RS 0x02
+    #define ELEMENT_NUMBER 2    // liczba napisow w buforze
+    #define COUNT_TIMES 4       // tyle musi sie pojawic poprawnych zliczen
+    #define TOTAL_COUNTS 24     // maksymalna liczba zliczen
+    #define DCO_FQ 1000000      // czestotliwosc DCO
+    #define ELIM_TIME_DIV 500  // 1/ELIM_TIME_DIV = czas eliminacji drgan
+    
+    const int ELIM_CHECKS = DCO_FQ / ELIM_TIME_DIV;
 
-char* text_bufor[] = {            // bufor napisow
-  "Marymont",
-  "slodowiec"}; 
+char *stacje[] = {"Kabaty", "Natolin", "Imielin", "Stoklosy", "Ursynow",
+"Sluzew", "Wilanowska", "Wierzbno", "Raclawicka", "Pola Mokotowskie", "Politechnika",
+"Centrum", "Swietokrzyska", "Ratusz Arsenal", "Dworzec Gdanski", "Plac Wilsona",
+"Marymont", "Slodowiec", "Stare Bielany", "Wawrzyszew", "Mlociny"};
 
+const int stations_num = 21;
+
+  int timer_on = 0;
 int index = 0;              // aktualnie wyswietlany index
+    //Obsluga wyswietlacza
+    void strobeE();
+    inline void delayUs(unsigned int num);
+    inline void delayMs(unsigned int num);
+    void display_string(char *tab);
 
-/* bufory I/O realizujace podwojne buforowanie */
+    /* znaczniki przekazywane miedzy ISR a petla glowna
+    b0 = przycisk lewy zglasza przerwanie (dolny)
+    b1 = przycisk prawy zglasza przerwanie (gorny)
+    */
+    int g_flags = 0;
 
+    int curr_p2_state = 0;  // stan portu P2 (WE, przyciski na b0 i b1)
 
-/* znaczniki przekazywane miedzy ISR a petla glowna
-b0 = przycisk lewy zglasza przerwanie
-b1 = przycisk prawy zglasza przerwanie
-b2 = timer zglasza przerwanie
-b3 = aktualny stan guzika
-*/
-int g_flags = 0; 
-
-int main( void )
-{ 
-  // Stop watchdog timer to prevent time out reset.
-  WDTCTL = WDTPW + WDTHOLD;
-  
-  /***************** inicjalizacja systemu *****************/
-  int all_counts = 0;              // liczba wszystkich zliczen
-  int counts_in_row = 0;           // liczba zliczen z rzedu
-  int button_pressed= 0;      // ustawiana po eliminacji drgan stykow
-  int waiting_for_relase = 0;  // @true oznacza ze czekamy na zwolnieni guzika
-                                   // @false ze na nacisniecie guzika
-  int index_change = 0;       // zmiana indeksu nastapila
-  
-  /*
-  Przygotowanie zegarów.
-  */   
-
-  
-  /*
-  Przygotowanie timera A
-  */
- 
-  
-  /*
-  Ustawienie portów:
-  P1.7 - dioda b³êdu
-  P3.4 - UTXD0
-  P3.5 - URXD0
-  */  
-  P5DIR |= 0XFF;     
-  // ustawienie portow jako wyjscia
-  P1DIR |= BIT0 + BIT2+BIT3;       // linie danych
-  P6OUT &= !BIT0;                 // zgaszenie diody bledu 
-  P6DIR |= BIT0;                  // ustaw bit7 jako wyjsciowy
-  P5OUT = 0;
-  P1OUT = 0;
-  
-  
-  /*P3SEL |= BIT4 + BIT5;           // ustaw piny do obslugi RS232
- */
-  
-  // POWER UP LCD
- /*  P5OUT = DX_FN_SET;
-    __no_operation();
-    P1OUT = CTRL_E;
-    __no_operation();
-    P1OUT &= !CTRL_E;
-    P5OUT = DX_FN_SET;
-    __no_operation();
-    P1OUT = CTRL_E;
-    __no_operation();
-    P1OUT &= !CTRL_E;
-    P5OUT = DX_FN_SET;
-    __no_operation();
-    P1OUT = CTRL_E;
-    __no_operation();
-    P1OUT &= !CTRL_E;
-    
-    P5OUT = DX_FN_SET;
-    __no_operation();
-    P1OUT = CTRL_E;
-    __no_operation();
-    P1OUT &= !CTRL_E;
-    
-    P5OUT = 0x08;
-    __no_operation();
-    P1OUT = CTRL_E;
-    __no_operation();
-    P1OUT &= !CTRL_E;
-    
-    P5OUT = 0x01;
-    __no_operation();
-    P1OUT = CTRL_E;
-    __no_operation();
-    P1OUT &= !CTRL_E;
-    
-    P5OUT = DX_ENTRY_MODE_SET ;
-    __no_operation();
-    P1OUT = CTRL_E;
-    __no_operation();
-    P1OUT &= !CTRL_E;
-    
-    P5OUT = 'a'; 
-    __no_operation();
-    P1OUT = CTRL_E;
-    __no_operation();
-    P1OUT &= !CTRL_E;*/
-  /***************** czêœæ aplikacyjna *****************/
-mainloop:
-  while(1)
-  {
-   
-    // Przejœcie w tryb uspienia + odlokowanie przerwañ
-    //__bis_SR_register(LPM0_bits + GIE);
-    __no_operation();
-    
-    P5OUT =DX_RETURN_HOME;
-    __no_operation();
-    P1OUT |= CTRL_E;
-    __no_operation();
-    P1OUT &= CTRL_NE;
-    
-    P5OUT = DX_FN_SET;
-    __no_operation();
-    P1OUT |= CTRL_E;
-    __no_operation();
-    P1OUT &= CTRL_NE;
-    P5OUT = 0x0F;//DX_DISP_ON_OFF ;
-    __no_operation();
-    P1OUT |= CTRL_E;
-    __no_operation();
-    P1OUT &= CTRL_NE;
-    P5OUT = DX_ENTRY_MODE_SET ;
-    __no_operation();
-    P1OUT |= CTRL_E;
-    __no_operation();
-    P1OUT &= CTRL_NE;
-    //DANE
-    P1OUT |= CTRL_RS;
-    __no_operation();
-    P1OUT |= CTRL_E;
-    __no_operation();
-    P1OUT &= CTRL_NE;
-    P5OUT = 0x62; 
-    __no_operation();
-    P1OUT |= CTRL_E;
-    __no_operation();
-    P1OUT &= CTRL_NE;
+    int main( void )
+    {
+       // Stop watchdog timer to prevent time out reset
+      WDTCTL = WDTPW + WDTHOLD;
       
-    //  P5OUT =DX_RETURN_HOME ; 
-    
-    
-mainloop_internal:
-  //---------------KONCEPCJA
-  // jezeli index byl zmieniany wypisz znak o indexsie na wyswietlacz //obsluga wyswietlacza
-  /*if(index_change){
-    //wypisz znak
-    //zapisz indeks do pamieci
-    index_change = 0;
-  }
-  // jezeli przerwanie zglosil przycisk zablokuj przerwania obu przyciskow i wlacz timer
-  if((g_flags & BIT0)|| (g_flags & BIT1)){
-      //blokuj przerwania obu przyciskow
-      //wlacz timer
-      // nie czysc flag
-  }
+      // przyciski
+      P2IES = 0xFF;        // przerwanie wyzwalane 1->0
+      P2IE = BIT0 + BIT1;  // przyciski wyboru stacji
+      
+      // timer A
+      TACTL |= TASSEL_1;
+      TACCTL0 |= CCIE;
+      TACCR0 = 5;
+     
+      int i = 0;
+      int elim_state = 0;   // stan eliminacji drgan : 0 - czekamy na 0, 1 - czekamy na 1
 
-  // eliminacja drgan stykow// liczenie do 4 // przerwania timera
-  if(g_flags & BIT2){
-    all_counts++;
-    if(all_counts >= TOTAL_COUNTS){ // koniec eliminacji
-      //TODOwylacz timer
-      all_counts =0;
-      counts_in_row = 0;
-    }
-    else{
-      if(!waiting_for_relase){               // czekamy na nacisniecie
-         if( g_flags & !BIT2)               // czy BIT2 == 0, wcisnieto
-           counts_in_row++;
-         else
-           counts_in_row = 0;
-      }
-      else{                                 // czekamy na zwolnienie
-         if( g_flags & BIT2)                // czy BIT2 == 1, zwolniono
-           counts_in_row++;
-         else
-           counts_in_row = 0;
-        
-      }
-      if(counts_in_row == COUNT_TIMES){   // jesli wykrylismy zmiana button to zmieniamy
+       
+       //Port 1 to wyjscie danych na wyswietlacz
+       P1DIR = 0xFF;
+       P1OUT = 0x00;
 
-          waiting_for_relase = !waiting_for_relase;
-          if(!waiting_for_relase)         // jezeli przycisk jest puszczony
-            ;//TODO wylacz timer
+       //Port 3 to wyjscie sterujace wyswietlaczem
+       // pin 1 = wyjscie strobujace E
+       // pin 2 = wyjscie RS
+       P3DIR = 0xFF;
+       P3OUT = 0x00;
+       
+       //Ustawienie wyswietlacza
+       P1OUT = 0x38;          //Function set
+       strobeE();
+       P1OUT = 0x0C;          //Display on/off control
+       strobeE();
+       P1OUT = 0x06;          //Entry mode set
+       strobeE();
+       delayUs(40);
+       P1OUT = 0x01;          //Clear
+       strobeE();
+       delayMs(3);
+       
+       display_string(stacje[index]);
+       //petla glowna programu
+       while(1)
+       {
+          //zasypiamy
+         _BIS_SR(LPM0_bits + GIE);
+         __disable_interrupt();
+         
+
+         
+         if ((elim_state == 0) && ((g_flags & BIT0)|| (g_flags & BIT1)))
+         {
+            i = 0;
+            while ((i < ELIM_CHECKS) && (curr_p2_state == P2IN))
+            {
+              i++;  
+            }
+            if (i == ELIM_CHECKS)
+            {
+              if (g_flags & BIT1)
+                index = (index + 1) % stations_num;  
+              else if (g_flags & BIT0)
+                index = (index == 0) ? (stations_num - 1): index - 1;
+              display_string(stacje[index]);
+              // SEKCJA KRYTYCZNA!
+              P2IES = 0;
+              P2IFG = 0;
+              // koniec SK
+              elim_state = 1;
+            }
+            g_flags = 0;
+            P2IE = BIT0 + BIT1;  // przyciski wyboru stacji
+         }
+         else if ((elim_state == 1) && ((g_flags & BIT0)|| (g_flags & BIT1)))
+        {
+            i = 0;
+            while ((i < ELIM_CHECKS) && (curr_p2_state == P2IN))
+            {
+              i++;  
+            }
+            if (i == ELIM_CHECKS)
+            {
+              // SEKCJA KRYTYCZNA!
+              P2IES = 0xFF;
+              P2IFG = 0;
+              // koniec SK
+              elim_state = 0;
+            }
+            g_flags = 0;
+            P2IE = BIT0 + BIT1;  // przyciski wyboru stacji
+         }
+           
+
+          __enable_interrupt();
+       }
+       return 0;
+    }
+
+
+    void strobeE()
+    {
+       P3OUT |= MASK_E;
+       P3OUT &= ~MASK_E;
+    }
+
+    inline void delayUs(unsigned int num)
+    {
+      while(num--);
+    }
+
+    inline void delayMs(unsigned int num)
+    {
+      while(num--)
+        delayUs(80);
+    }
+    
+    #pragma vector=PORT2_VECTOR
+    __interrupt void Port1 (void)
+    {
+       curr_p2_state = P2IN;
+       g_flags |= P2IFG & 0x0003;
+       _BIS_SR(LPM0_EXIT + GIE);
+       P2IFG = 0;
+       P2IE = 0;
+    }
+    
+    #pragma vector=TIMERA0_VECTOR
+    __interrupt void TimerA (void)
+    {
+
+      g_flags |= BIT2;
+      _BIS_SR(LPM0_EXIT + GIE);
+    }
+    
+    void display_string(char *tab)
+    {
+      int len = strlen(tab);
+      int i;
+      P3OUT = 0x00;      
+      P1OUT = 0x01;          //Clear
+      strobeE();
+      delayMs(3);
+      for (i = 0; i < len; i++)
+      {
+        P1OUT = tab[i];
+        P3OUT = MASK_RS;
+        strobeE();
       }
     }
-    g_flags &= !BIT2;         //kasuj flage
-  }
- 
-  // jezeli wykryto wcisniecie przycisku zmien index, ustaw flage indexu
-  if(button_pressed ){
-      // zmien indeks
-    if((g_flags & BIT0)&&(index>0) ){ // przesuniecie w lewo; zatrzask w 0
-      index--;
-    }
-    if((g_flags &BIT1)&& (index < ELEMENT_NUMBER)){ //przesunie w prawo
-      index++;
-    }
-    g_flags &= !  BIT0;
-    g_flags &= !  BIT1;
-    index_change = 1;
-    button_pressed = 0;
-    
-  }
-  // jezeli flagi nie puste powrot do mainloop
-  if(g_flags!= 0)
-    goto mainloop_internal;
-  */
-  }
-  return 0;
-}
