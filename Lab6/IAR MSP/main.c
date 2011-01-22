@@ -55,6 +55,16 @@ inline void delayMs(unsigned int num);
 inline void delay_us(int us_num); // :TODO: ma zastapic powyzsze
 void display_string(char *str);   // wyswietla napis na LCD
 
+//zapis do pamieci do segmentu 0xFE00 - 0xFFFF
+void save_to_memory(unsigned int index_to_save);
+
+// czyszczenie segmentu
+void clear_memory();
+
+// wyszukiwanie adresu do zapisu w pamieci w segmencie 0xFE00 -0xFFFF
+// ustawia mem_ptr na ostatnia zapisana wartosc
+void find_addres();
+
 int main( void )
 {
   // Stop watchdog timer to prevent time out reset
@@ -124,7 +134,7 @@ int main( void )
           g_stations_index = (g_stations_index == 0) ? (g_stations_num - 1): g_stations_index - 1;
         display_string(stations[g_stations_index]);
         
-        save_to_memory();   // w funkcji blokowane sa przerwanie a pozniej odblokowywane
+        save_to_memory(g_stations_index);   // w funkcji blokowane sa przerwanie a pozniej odblokowywane
                             // wiec jezeli tu potrzebujesz zablokowanych to trzeba cos zmienic
         
         // SEKCJA KRYTYCZNA!
@@ -206,7 +216,8 @@ void display_string(char *str)
 }
 
 //zapis do pamieci do segmentu 0xFE00 - 0xFFFF
-void save_to_memory(unsigned int index_to_save){
+void save_to_memory(unsigned int index_to_save)
+{
   mem_ptr++;
   if(mem_ptr == SEGMENT_END)
     clear_memory();//kasuj pamiec
@@ -220,16 +231,15 @@ void save_to_memory(unsigned int index_to_save){
 
 ;;;;;;;;;;;                  // wlacz watch-doga
   __enable_interrupt();
-  
-  
 }
 
-// czysczenie segmentu
-void clear_memory(){
+// czyszczenie segmentu
+void clear_memory()
+{
   __disable_interrupt();
-  
+  // :TODO: wylacz watchdoga
   //flash. 514 kHz < SMCLK < 952 kHz
-  FCTL2 = FWKEY +FSSEL1+FN0  // ustawienie zegarow SMLCK/2
+  FCTL2 = FWKEY +FSSEL1+FN0; // ustawienie zegarow SMLCK/2
   FCTL3 = FWKEY;             // wyczysc LOCK
   FCTL1 = FWKEY + ERASE;     // wlacz kasowanie
   mem_ptr = 0;               // kasowanie
@@ -244,7 +254,8 @@ void clear_memory(){
 
 // wyszukiwanie adresu do zapisu w pamieci w segmencie 0xFE00 -0xFFFF
 // ustawia mem_ptr na ostatnia zapisana wartosc
-void find_addres(){
+void find_addres()
+{
   mem_ptr= SEGMENT_END;
   // wyszukaj miejsce gdzie mozna zapisac
   do{
@@ -253,7 +264,7 @@ void find_addres(){
     mem_ptr--;
   }
   while (&mem_ptr!= SEGMENT_START) //poczatek segmentu
-  
+    ;   // :TODO: hmm?
 }
 // przerwanie przyciskow - samoblokujace
 #pragma vector=PORT2_VECTOR
