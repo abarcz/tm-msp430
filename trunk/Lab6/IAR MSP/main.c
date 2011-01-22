@@ -7,6 +7,9 @@
 #define CTRL_E            0x01
 #define CTRL_RS           0x02
 
+#define SEGMENT_START 0xFE00
+#define SEGMENT_END   0xFFFF
+
 // komendy sterujace LCD
 /*
 #define LCD_FN_SET        0x38
@@ -39,6 +42,8 @@ b0 = przycisk dolny zglasza przerwanie (cofnij sie o stacjê)
 b1 = przycisk górny zglasza przerwanie (naprzód o jedn¹ stacjê)
 */
 int g_flags = 0;
+
+unsigned int *mem_ptr;      // wskaznik miejsca do zapisu we flashu
 
 //Obsluga wyswietlacza
 void strobe_e();            // puszcza impuls e na wyswietlacz
@@ -94,6 +99,8 @@ int main( void )
   
   display_string(stations[g_stations_index]);
   
+  find_addres();        // ustawia wzkaznik na miejsce w pamieci
+  
   //petla glowna programu
   while(1)
   {
@@ -116,6 +123,10 @@ int main( void )
         else if (g_flags & BIT0)
           g_stations_index = (g_stations_index == 0) ? (g_stations_num - 1): g_stations_index - 1;
         display_string(stations[g_stations_index]);
+        
+        save_to_memory();   // w funkcji blokowane sa przerwanie a pozniej odblokowywane
+                            // wiec jezeli tu potrzebujesz zablokowanych to trzeba cos zmienic
+        
         // SEKCJA KRYTYCZNA!
         P2IES = 0;          // przelacz zbocze, ktorym wyzwalane jest INT
         P2IFG = 0;          // wyczysc ew. smieci
@@ -194,6 +205,56 @@ void display_string(char *str)
   }
 }
 
+//zapis do pamieci do segmentu 0xFE00 - 0xFFFF
+void save_to_memory(unsigned int index_to_save){
+  mem_ptr++;
+  if(mem_ptr == SEGMENT_END)
+    clear_memory();//kasuj pamiec
+  WDTCTL = WDTPW + WDTHOLD;  // wylacz watch-doga
+  __disable_interrupt();
+  FCTL3 = FWKEY;             // wyczysc LOCK
+  FCTL1 = FWKEY + WRT;       // wlacz zapis
+  mem_ptr = index_to_save;   // zapis
+  FCTL1 = FWKEY;             // wylacz zapis
+  FCTL3 = FWKEY + LOCK;      // ustaw LOCK
+
+;;;;;;;;;;;                  // wlacz watch-doga
+  __enable_interrupt();
+  
+  
+}
+
+// czysczenie segmentu
+void clear_memory(){
+  __disable_interrupt();
+  
+  //flash. 514 kHz < SMCLK < 952 kHz
+  FCTL2 = FWKEY +FSSEL1+FN0  // ustawienie zegarow SMLCK/2
+  FCTL3 = FWKEY;             // wyczysc LOCK
+  FCTL1 = FWKEY + ERASE;     // wlacz kasowanie
+  mem_ptr = 0;               // kasowanie
+  FCTL1 = FWKEY;             // wylacz zapis
+  FCTL3 = FWKEY + LOCK;      // ustaw LOCK
+  
+  ;;;;;                      // wlacz watch-doga
+  __enable_interrupt();
+  
+  mem_ptr = 0xFE00;
+}
+
+// wyszukiwanie adresu do zapisu w pamieci w segmencie 0xFE00 -0xFFFF
+// ustawia mem_ptr na ostatnia zapisana wartosc
+void find_addres(){
+  mem_ptr= SEGMENT_END;
+  // wyszukaj miejsce gdzie mozna zapisac
+  do{
+    if(*mem_ptr != 0xFF)
+      return;
+    mem_ptr--;
+  }
+  while (&mem_ptr!= SEGMENT_START) //poczatek segmentu
+  
+}
 // przerwanie przyciskow - samoblokujace
 #pragma vector=PORT2_VECTOR
 __interrupt void Port1 (void)
