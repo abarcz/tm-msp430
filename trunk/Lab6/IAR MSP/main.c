@@ -57,9 +57,10 @@ inline void strobe_e();           // puszcza impuls e na wyswietlacz
 inline void delay_us(int us_num); // czeka us_num mikrosekund (min 31 dla ACLK) 
 void display_string(char *str);   // wyswietla napis na LCD
 
-// zapis do pamieci pod adres mem_ptr + 2, w segmencie ograniczonym przez 
-// segment_end, przesuwa wskaznik mem_ptr
-void save_to_memory(unsigned int int_to_save, unsigned int **mem_ptr,
+// zapis do pamieci pod adres (mem_ptr + 2), w segmencie ograniczonym przez 
+// segment_end
+// zwraca: 1 - nastapilo kasowanie pamieci; 0 - kasowanie nie nastapilo
+int save_to_memory(unsigned int int_to_save, unsigned int **mem_ptr,
                     unsigned int segment_start, unsigned int segment_end);
 
 // czyszczenie segmentu wskazanego przez mem_ptr
@@ -88,6 +89,7 @@ int main(void)
   int state = S_NORMAL;       // stan ukladu - normalny
   int stations_index = 0;     // indeks aktualnie wybranej stacji
   unsigned int control_sum = 0; // suma kontrolna segmentu licznikow
+  int seg_clear = 0;          // czy w operacji zapisu nastapilo kasowanie?
   
   // wskaznik do pamieci - adres licznika stacji
   unsigned int *mem_ptr = 0;
@@ -267,8 +269,11 @@ mainloop_internal:
           else if (g_flags & BIT0)
             stations_index = (stations_index == 0) ? (stations_num - 1): stations_index - 1;
           display_string(stations[stations_index]);
-          control_sum += stations_index;
-          save_to_memory(stations_index, &mem_ptr, SEGMENT_START, SEGMENT_END);   
+          seg_clear = save_to_memory(stations_index, &mem_ptr, SEGMENT_START, SEGMENT_END);   
+          if (seg_clear == 1)   // jesli skasowano segment, suma sie resetuje
+            control_sum = stations_index;
+          else
+            control_sum += stations_index;
           save_to_memory(control_sum, &cs_mem_ptr, CS_SEG_START, CS_SEG_END);
         }
         __disable_interrupt();
@@ -345,13 +350,16 @@ void display_string(char *str)
 
 // zapis do pamieci pod adres (mem_ptr + 2), w segmencie ograniczonym przez 
 // segment_end
-void save_to_memory(unsigned int int_to_save, unsigned int **mem_ptr,
+// zwraca: 1 - nastapilo kasowanie pamieci; 0 - kasowanie nie nastapilo
+int save_to_memory(unsigned int int_to_save, unsigned int **mem_ptr,
                     unsigned int segment_start, unsigned int segment_end)
 {
+  int retval = 0;
   unsigned short wdog_state;
   *mem_ptr += 1;
   if(*mem_ptr > (unsigned int*)segment_end)
   {
+    retval = 1;
     clear_memory((unsigned int*)segment_start);//kasuj pamiec
     *mem_ptr = (unsigned int*)segment_start;
   }
@@ -368,6 +376,7 @@ void save_to_memory(unsigned int int_to_save, unsigned int **mem_ptr,
   if ((WATCHDOG_ON) && !(wdog_state & WDTHOLD))
     WDTCTL = WDTPW;           // wlacz watchdoga
    __set_interrupt_state(state);
+   return retval;
 }
 
 // czyszczenie segmentu wskazanego przez mem_ptr
