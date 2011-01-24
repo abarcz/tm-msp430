@@ -140,8 +140,8 @@ int main(void)
   
   /*
   // test pokazujacy reakcje na przepelnienie segmentu pamieci
-  clear_memory(SEGMENT_START);
-  clear_memory(CS_SEG_START);
+  clear_memory((unsigned int*)SEGMENT_START);
+  clear_memory((unsigned int*)CS_SEG_START);
   cs_mem_ptr = (unsigned int*)(CS_SEG_START - 2);
   stations_index = stations_num;
   for (mem_ptr = (unsigned int*)(SEGMENT_START - 2); 
@@ -151,8 +151,7 @@ int main(void)
     control_sum += stations_num;
     save_to_memory(control_sum, &cs_mem_ptr, CS_SEG_START, CS_SEG_END);
   }
-  for (mem_ptr = (unsigned int*)(SEGMENT_END - 4); 
-       mem_ptr <= (unsigned int*)(SEGMENT_END + 2);)
+  for (i = 0; i < 4; i++)
   {
     save_to_memory(stations_index, &mem_ptr, SEGMENT_START, SEGMENT_END);   
     control_sum += stations_num;
