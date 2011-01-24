@@ -103,7 +103,6 @@ int main(void)
   // timer A
   TACTL |= TASSEL_1;
   TACCTL0 |= CCIE;
-  TACCR0 = 5;
   
   // Wyjscie danych na LCD
   P1DIR = 0xFF;
@@ -320,8 +319,7 @@ inline void strobe_e()
 // czeka us_num mikrosekund (min 31 dla ACLK)
 inline void delay_us (int us_num)
 {
-  int ticks = (int)ceil((double)(us_num * TIMER_FQ) / 1000000);
-  TACCR0 = ticks;
+  TACCR0 = (int)ceil((double)(us_num * TIMER_FQ) / 1000000);
   TAR = 0;
   TACTL |= MC_1;              // wlacza timer. przerwania musza byc wl.
   _BIS_SR(LPM0_bits + GIE);   // zasnij w oczekiwaniu na timer A
