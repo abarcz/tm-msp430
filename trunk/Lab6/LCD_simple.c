@@ -39,11 +39,11 @@ int main( void )
   
   // Uruchomienie wyswietlacza
   delay_us(30000);            // Bez tego po resecie moze nie dzialac  
-  P1OUT = 0x38;               // Function set 
+  P1OUT = 0x38;               // Function set (8bit, 1 line)
   strobe_e();
   P1OUT = 0x0C;               // Display on/off control 
   strobe_e();
-  P1OUT = 0x06;               // Entry mode set 
+  P1OUT = 0x06;               // Entry mode set (increments DDRAM address)
   strobe_e();
   delay_us(1000);
   P1OUT = LCD_CLEAR;         
