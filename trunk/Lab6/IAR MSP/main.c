@@ -97,10 +97,6 @@ int main(void)
   unsigned int *cs_mem_ptr = 0;
   // czy powiodlo sie policzenie sumy kontrolnej?
   int ctrl_sum_check1_succeeded = 0;
- 
-  // przyciski
-  P2IES = 0xFF;               // przerwanie wyzwalane 1->0
-  P2IE = BIT0 + BIT1;         // przyciski wyboru stacji
   
   // timer A
   TACTL |= TASSEL_1;
@@ -218,6 +214,10 @@ int main(void)
   WDTCTL = WDTPW + WDTHOLD;     // wylacz watchdoga przed wejsciem do petli
   g_flags = 0;
   
+   // przyciski
+  P2IES = 0xFF;               // przerwanie wyzwalane 1->0
+  P2IE = BIT0 + BIT1;         // przyciski wyboru stacji
+  
   //petla glowna programu
   while(1)
   {
@@ -321,13 +321,21 @@ inline void strobe_e()
 }
 
 // czeka us_num mikrosekund (min 31 dla ACLK)
-inline void delay_us (int us_num)
+inline void delay_us(int us_num)
 {
+  istate_t istate;
   TACCR0 = (int)ceil((double)(us_num * TIMER_FQ) / 1000000);
   TAR = 0;
-  TACTL |= MC_1;              // wlacza timer. przerwania musza byc wl.
-  _BIS_SR(LPM0_bits + GIE);   // zasnij w oczekiwaniu na timer A
-  __no_operation();
+  TACTL |= MC_1;              // wlacza timer. przerwania timera musza byc wl.
+  istate = __get_interrupt_state(); // zachowanie stanu przerwan globalnych
+  do
+  {
+    _BIS_SR(LPM0_bits + GIE); // zasnij w oczekiwaniu na timer A
+    __disable_interrupt();    // zablokuj na czas sprawdzenia warunku while
+  }
+  while (TACTL & MC_1);       // dopiero gdy timer A jest wylaczony,
+                              // wiemy ze nastapilo przerwanie timera A.
+  __set_interrupt_state(istate);  // przywrocenie poprzedniego stanu przerwan
 }
 
 // wyswietla napis str na ekranie LCD
@@ -448,5 +456,5 @@ __interrupt void Port1 (void)
 __interrupt void TimerA (void)
 {
   TACTL &= 0xFFCF;            // wylacz timer
-  _BIS_SR(LPM0_EXIT + GIE);
+  _BIS_SR(LPM0_EXIT);
 }
